@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 paradag = "*"
 icecream = "*"
+pydantic = "*"
 
 [dev-packages]
 mypy = "*"
