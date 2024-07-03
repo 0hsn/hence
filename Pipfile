@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 paradag = "*"
+icecream = "*"
 
 [dev-packages]
 mypy = "*"
