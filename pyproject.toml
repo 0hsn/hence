@@ -1,25 +1,21 @@
 [project]
 name = "hence"
 version = "0.8.0"
-authors = [
-  { name="Mahmudul Hasan", email="hasanlock@gmail.com" },
-]
+authors = [{ name = "Mahmudul Hasan", email = "hasanlock@gmail.com" }]
 description = "Hence, a powerful framework designed to streamline data pipeline, scraping, automation workflow orchestration."
 readme = "README.md"
 requires-python = ">=3.11"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.11",
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Utilities",
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Utilities",
 ]
-dependencies = [
-  "paradag @ git+https://github.com/0hsn/paradag.git",
-]
+dependencies = ["paradag==1.2.0"]
 
 [project.urls]
 Homepage = "https://github.com/0hsn/hence"
