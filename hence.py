@@ -4,7 +4,6 @@ Hence
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from collections import UserList
 import enum
 from functools import wraps
 from json import loads, dumps
