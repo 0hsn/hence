@@ -164,6 +164,31 @@ class WorkExecFrame:
         return self.function_out
 
 
+def task(title: str = None) -> list:
+    """Task"""
+
+    def _internal(function):
+        """Internal handler"""
+
+        hence_log("debug", "title `%s` registered.", title)
+        # logger.debug("title `%s` registered.", title)
+
+        if "kwargs" not in function.__code__.co_varnames:
+            hence_log("error", "Missing %s(..., **kwargs).", type(function).__name__)
+            raise TypeError(f"Missing {type(function).__name__}(..., **kwargs).")
+
+        @wraps(function)
+        def _decorator(**kwargs):
+            """decorator"""
+
+            hence_log("debug", "`%s` called with %s.", type(function).__name__, kwargs)
+            return function(**kwargs)
+
+        return _decorator
+
+    return _internal
+
+
 def work(
     before: Callable = lambda: ...,
     after: Callable = lambda: ...,
