@@ -7,10 +7,55 @@ from abc import ABC, abstractmethod
 import enum
 from functools import wraps
 from json import loads, dumps
+
+import logging
+import sys
 from types import FunctionType
 from typing import Any, Callable, final
 
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
+from pydantic import BaseModel
+
+
+class HenceConfig(BaseModel):
+    """Hence configuration class"""
+
+    enable_log: bool = False
+
+    def load_config(self):
+        """loads or reloads HenceConfig"""
+
+        stderr_log_formatter = logging.Formatter(
+            "%(name)s :: %(levelname)s :: "
+            + "(P)%(process)d/(Th)%(thread)d :: "
+            + "%(message)s"
+        )
+
+        stdout_log_handler = logging.StreamHandler(stream=sys.stderr)
+        stdout_log_handler.setLevel(logging.NOTSET)
+        stdout_log_handler.setFormatter(stderr_log_formatter)
+
+        logger.addHandler(stdout_log_handler)
+        logger.setLevel(logging.DEBUG)
+
+
+logger = logging.getLogger("hence")
+
+hence_config = HenceConfig()
+hence_config.load_config()
+
+
+def hence_log(level: str, message: str, *args: list) -> None:
+    """Final logging function"""
+    if not hence_config.enable_log:
+        return
+
+    if level not in ("debug", "error"):
+        raise SystemError("Invalid log type.")
+
+    _log_level = logging.DEBUG if level == "debug" else logging.ERROR
+
+    logger.log(_log_level, message, *args)
 
 
 def get_step_out(args: dict, step_name: str) -> Any:
