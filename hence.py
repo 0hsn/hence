@@ -12,7 +12,7 @@ from json import loads, dumps
 import logging
 import sys
 from types import FunctionType
-from typing import Any, Callable, final
+from typing import Any, Callable, Protocol, Union, final
 
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
@@ -425,6 +425,19 @@ class Workflow(DagExecutor):
             raise TypeError("Unsupported workgroup found.")
 
         return True
+
+
+class ExecutorContract(Protocol):
+    """Interface for Executor"""
+
+    def param(self, vertex) -> Any:
+        """Have param"""
+
+    def execute(self, __work) -> Any:
+        """Can execute"""
+
+    def report_finish(self, vertices_result):
+        """Reports final steps"""
 
 
 class LinearExecutor:
