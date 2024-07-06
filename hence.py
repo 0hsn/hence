@@ -4,6 +4,7 @@ Hence
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from contextvars import ContextVar
 import enum
 from functools import wraps
 from json import loads, dumps
@@ -16,10 +17,15 @@ from typing import Any, Callable, final
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
 
+CTX_NAME = "hence_context"
+CTX_FN_BASE = "func"
+
+
 class HenceConfig:
     """Hence configuration class"""
 
     enable_log: bool = False
+    context: ContextVar[dict] = ContextVar(CTX_NAME, default={CTX_FN_BASE: {}})
 
     def load_config(self):
         """loads or reloads HenceConfig"""
