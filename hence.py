@@ -217,6 +217,19 @@ def task(title: str = None) -> list:
     return _internal
 
 
+
+
+def setup_dag(vertices: list) -> DAG:
+    """Setup DAG"""
+
+    _dag = DAG()
+
+    _dag.add_vertex(*vertices)
+
+    for index in range(1, len(vertices)):
+        _dag.add_edge(vertices[index - 1], vertices[index])
+
+    return _dag
 def work(
     before: Callable = lambda: ...,
     after: Callable = lambda: ...,
