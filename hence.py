@@ -43,6 +43,30 @@ class HenceConfig:
         logger.addHandler(stdout_log_handler)
         logger.setLevel(logging.DEBUG)
 
+    def context_add(self, key: str, obj: dict):
+        """Add to context"""
+
+        if not isinstance(obj, dict):
+            hence_log("error", "Only dict type supported for obj. found %s.", type(obj))
+            raise TypeError(f"Only dict type supported for obj. found {type(obj)}")
+
+        context_val = self.context.get()
+
+        if "func" in context_val:
+            context_val[key] = context_val[key] | obj
+
+    def context_search(self, key: str, obj_key: str):
+        """Search in context"""
+
+        context_val = self.context.get()
+
+        if key in context_val:
+            if obj_key in context_val[key]:
+                return context_val[key][obj_key]
+
+        hence_log("error", "Object with key: `%s` not found.", key)
+        raise NotImplementedError(f"Object with key: `{key}` not found.")
+
 
 logger = logging.getLogger("hence")
 
