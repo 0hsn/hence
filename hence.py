@@ -8,7 +8,6 @@ from contextvars import ContextVar
 import enum
 from functools import wraps
 from json import loads, dumps
-
 import logging
 import sys
 from types import FunctionType
@@ -27,7 +26,7 @@ class HenceConfig:
     enable_log: bool = False
     context: ContextVar[dict] = ContextVar(CTX_NAME, default={CTX_FN_BASE: {}})
 
-    def load_config(self):
+    def logger_config(self):
         """loads or reloads HenceConfig"""
 
         stderr_log_formatter = logging.Formatter(
@@ -71,7 +70,7 @@ class HenceConfig:
 logger = logging.getLogger("hence")
 
 hence_config = HenceConfig()
-hence_config.load_config()
+hence_config.logger_config()
 
 
 def hence_log(level: str, message: str, *args: list) -> None:
