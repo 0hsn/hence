@@ -14,10 +14,9 @@ from types import FunctionType
 from typing import Any, Callable, final
 
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
-from pydantic import BaseModel
 
 
-class HenceConfig(BaseModel):
+class HenceConfig:
     """Hence configuration class"""
 
     enable_log: bool = False
