@@ -18,6 +18,9 @@ from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
 CTX_NAME = "hence_context"
 CTX_FN_BASE = "func"
+CTX_FN_KEY_TIT = "title"
+CTX_FN_KEY_PAR = "parameters"
+CTX_FN_KEY_RES = "result"
 
 
 class HenceConfig:
@@ -199,7 +202,14 @@ def task(title: str = None) -> list:
         """Internal handler"""
 
         hence_log("debug", "title `%s` registered.", title)
-        # logger.debug("title `%s` registered.", title)
+        hence_config.context_add(
+            CTX_FN_BASE,
+            {
+                function.__name__: {
+                    CTX_FN_KEY_TIT: title,
+                }
+            },
+        )
 
         if "kwargs" not in function.__code__.co_varnames:
             hence_log("error", "Missing %s(..., **kwargs).", type(function).__name__)
