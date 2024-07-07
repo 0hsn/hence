@@ -4,14 +4,95 @@ Hence
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from collections import UserList
+from contextvars import ContextVar
 import enum
 from functools import wraps
 from json import loads, dumps
+import logging
+import sys
 from types import FunctionType
-from typing import Any, Callable, final
+from typing import Any, Callable, Protocol, Union, final
 
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
+
+
+CTX_NAME = "hence_context"
+CTX_FN_BASE = "func"
+CTX_FN_KEY_TIT = "title"
+CTX_FN_KEY_PAR = "parameters"
+CTX_FN_KEY_RES = "result"
+
+
+class HenceConfig:
+    """Hence configuration class"""
+
+    enable_log: bool = False
+    context: ContextVar[dict] = ContextVar(CTX_NAME, default={CTX_FN_BASE: {}})
+
+    def logger_config(self):
+        """loads or reloads HenceConfig"""
+
+        stderr_log_formatter = logging.Formatter(
+            "%(name)s :: %(levelname)s :: "
+            + "(P)%(process)d/(Th)%(thread)d :: "
+            + "%(message)s"
+        )
+
+        stdout_log_handler = logging.StreamHandler(stream=sys.stderr)
+        stdout_log_handler.setLevel(logging.NOTSET)
+        stdout_log_handler.setFormatter(stderr_log_formatter)
+
+        logger.addHandler(stdout_log_handler)
+        logger.setLevel(logging.DEBUG)
+
+    def context_add(self, key: str, obj: dict):
+        """Add to context"""
+
+        if not isinstance(obj, dict):
+            hence_log("error", "Only dict type supported for obj. found %s.", type(obj))
+            raise TypeError(f"Only dict type supported for obj. found {type(obj)}")
+
+        context_val = self.context.get()
+
+        if CTX_FN_BASE in context_val:
+            context_val[key] = context_val[key] | obj
+
+    def context_search(self, key: str, obj_key: str):
+        """Search in context"""
+
+        context_val = self.context.get()
+
+        if key in context_val:
+            if obj_key in context_val[key]:
+                return context_val[key][obj_key]
+
+        hence_log("error", "Object with key: `%s` not found.", key)
+        raise NotImplementedError(f"Object with key: `{key}` not found.")
+
+    def task_result(self, obj_key: str):
+        """Search in context"""
+
+        obj = self.context_search(CTX_FN_BASE, obj_key)
+        return obj[CTX_FN_KEY_RES] if CTX_FN_KEY_RES in obj else None
+
+
+logger = logging.getLogger("hence")
+
+hence_config = HenceConfig()
+hence_config.logger_config()
+
+
+def hence_log(level: str, message: str, *args: list) -> None:
+    """Final logging function"""
+    if not hence_config.enable_log:
+        return
+
+    if level not in ("debug", "error"):
+        raise SystemError("Invalid log type.")
+
+    _log_level = logging.DEBUG if level == "debug" else logging.ERROR
+
+    logger.log(_log_level, message, *args)
 
 
 def get_step_out(args: dict, step_name: str) -> Any:
@@ -118,6 +199,92 @@ class WorkExecFrame:
         self.function_out = self.function(**params)
 
         return self.function_out
+
+
+def task(title: str = None) -> list:
+    """Task"""
+
+    def _internal(function):
+        """Internal handler"""
+
+        hence_log("debug", "title `%s` registered.", title)
+        hence_config.context_add(
+            CTX_FN_BASE,
+            {
+                function.__name__: {
+                    CTX_FN_KEY_TIT: title,
+                }
+            },
+        )
+
+        if "kwargs" not in function.__code__.co_varnames:
+            hence_log("error", "Missing %s(..., **kwargs).", type(function).__name__)
+            raise TypeError(f"Missing {type(function).__name__}(..., **kwargs).")
+
+        @wraps(function)
+        def _decorator(**kwargs):
+            """decorator"""
+
+            hence_log("debug", "`%s` called with %s.", type(function).__name__, kwargs)
+            return function(**kwargs)
+
+        return _decorator
+
+    return _internal
+
+
+def run_tasks(fnt_list: list[FunctionType]) -> list[FunctionType]:
+    """Run @task"""
+
+    fn_list = []
+    for fn, fn_params in fnt_list:
+        fn_obj = hence_config.context_search(CTX_FN_BASE, fn.__name__)
+        fn_obj[CTX_FN_KEY_PAR] = fn_params
+
+        hence_config.context_add(CTX_FN_BASE, {fn.__name__: fn_obj})
+        fn_list.append(fn)
+
+    if not isinstance(fn_list, list):
+        hence_log("error", "`fn_list` does not contain a list of `@task`.")
+        raise TypeError("`fn_list` does not contain a list of `@task`.")
+
+    if not fn_list:
+        hence_log("error", "`fn_list` does not contain any `@task`.")
+        raise TypeError("`fn_list` does not contain any `@task`.")
+
+    for fn in fn_list:
+        if not isinstance(fn, FunctionType):
+            hence_log("error", "One or more @task is not FunctionType in `fn_list`.")
+            raise TypeError("One or more @task is not FunctionType in `fn_list`.")
+
+    _dag = setup_dag(fn_list)
+    return execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
+
+
+def setup_dag(vertices: list) -> DAG:
+    """Setup DAG"""
+
+    _dag = DAG()
+
+    _dag.add_vertex(*vertices)
+
+    for index in range(1, len(vertices)):
+        _dag.add_edge(vertices[index - 1], vertices[index])
+
+    return _dag
+
+
+def execute_dag(
+    dag: DAG,
+    processor_: Union[SequentialProcessor, MultiThreadProcessor],
+    executor_: ExecutorContract,
+) -> list[FunctionType]:
+    """Execute the dag"""
+
+    if not isinstance(dag, DAG):
+        raise TypeError(f"Not a DAG. type: {type(dag)}")
+
+    return dag_run(dag, processor=processor_, executor=executor_)
 
 
 def work(
@@ -329,6 +496,19 @@ class Workflow(DagExecutor):
         return True
 
 
+class ExecutorContract(Protocol):
+    """Interface for Executor"""
+
+    def param(self, vertex) -> Any:
+        """Have param"""
+
+    def execute(self, __work) -> Any:
+        """Can execute"""
+
+    def report_finish(self, vertices_result):
+        """Reports final steps"""
+
+
 class LinearExecutor:
     """Linear executor"""
 
@@ -360,3 +540,41 @@ class LinearExecutor:
         for vertex, result in vertices_result:
             if not isinstance(vertex, WorkGroup) and len(vertex.id) > 0:
                 self._results[vertex.id] = result
+
+
+class FunctionTypeExecutor:
+    """Linear executor"""
+
+    RES_KEY = "__works__"
+
+    def __init__(self) -> None:
+        """init LinearExecutor"""
+
+        self._results = {}
+
+    def param(self, vertex: Any) -> Any:
+        """Selecting parameters"""
+
+        return vertex
+
+    def execute(self, task_: FunctionType) -> Any:
+        """Execute"""
+
+        t_info = hence_config.context_search(CTX_FN_BASE, task_.__name__)
+
+        t_title = t_info["title"] if "title" in t_info else task_.__name__
+        t_params = t_info["parameters"] if "parameters" in t_info else {}
+
+        hence_log("debug", "`%s` is executing.", t_title)
+
+        return task_(**t_params)
+
+    def report_finish(self, vertices_result: list):
+        """After execution finished"""
+
+        fn, fn_result = vertices_result[0]
+        fn_obj = hence_config.context_search(CTX_FN_BASE, fn.__name__)
+        fn_obj[CTX_FN_KEY_RES] = fn_result
+
+        hence_config.context_add(CTX_FN_BASE, {fn.__name__: fn_obj})
+        hence_log("debug", "context.func: %s", hence_config.context.get())

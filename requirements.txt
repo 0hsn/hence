@@ -1,1 +1,0 @@
-paradag@ git+https://github.com/0hsn/paradag.git@38b0a0acf9cde9c56271262eba0b9f3d70db5313
