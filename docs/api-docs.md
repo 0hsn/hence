@@ -29,6 +29,8 @@ An alternative implementation for `@work` decorator, that is more cognitive frie
 
 Task can be created using `@task()` decorator.
 
+Here is [web scraper](../tests/samples/web_scraping_2.py) implemented.
+
 **Parameters**
 
 `title` String type. Represents the title of the task.
