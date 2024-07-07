@@ -69,6 +69,12 @@ class HenceConfig:
         hence_log("error", "Object with key: `%s` not found.", key)
         raise NotImplementedError(f"Object with key: `{key}` not found.")
 
+    def task_result(self, obj_key: str):
+        """Search in context"""
+
+        obj = self.context_search(CTX_FN_BASE, obj_key)
+        return obj[CTX_FN_KEY_RES] if CTX_FN_KEY_RES in obj else None
+
 
 logger = logging.getLogger("hence")
 
