@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 paradag = "*"
-icecream = "*"
 pydantic = "*"
 
 [dev-packages]
@@ -14,6 +13,7 @@ black = "*"
 flake8 = "*"
 pylint = "*"
 pytest = "*"
+icecream = "*"
 
 [requires]
 python_version = "3.12"
