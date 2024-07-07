@@ -227,7 +227,7 @@ def task(title: str = None) -> list:
     return _internal
 
 
-def run_tasks(fnt_list: list[FunctionType]):
+def run_tasks(fnt_list: list[FunctionType]) -> list[FunctionType]:
     """Run @task"""
 
     fn_list = []
@@ -252,7 +252,7 @@ def run_tasks(fnt_list: list[FunctionType]):
             raise TypeError("One or more @task is not FunctionType in `fn_list`.")
 
     _dag = setup_dag(fn_list)
-    execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
+    return execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
 
 
 def setup_dag(vertices: list) -> DAG:
@@ -272,7 +272,7 @@ def execute_dag(
     dag: DAG,
     processor_: Union[SequentialProcessor, MultiThreadProcessor],
     executor_: ExecutorContract,
-) -> list:
+) -> list[FunctionType]:
     """Execute the dag"""
 
     if not isinstance(dag, DAG):
