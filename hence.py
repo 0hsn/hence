@@ -227,6 +227,32 @@ def task(title: str = None) -> list:
     return _internal
 
 
+def run_tasks(fnt_list: list[FunctionType]):
+    """Run @task"""
+
+    fn_list = []
+    for fn, fn_params in fnt_list:
+        fn_obj = hence_config.context_search(CTX_FN_BASE, fn.__name__)
+        fn_obj[CTX_FN_KEY_PAR] = fn_params
+
+        hence_config.context_add(CTX_FN_BASE, {fn.__name__: fn_obj})
+        fn_list.append(fn)
+
+    if not isinstance(fn_list, list):
+        hence_log("error", "`fn_list` does not contain a list of `@task`.")
+        raise TypeError("`fn_list` does not contain a list of `@task`.")
+
+    if not fn_list:
+        hence_log("error", "`fn_list` does not contain any `@task`.")
+        raise TypeError("`fn_list` does not contain any `@task`.")
+
+    for fn in fn_list:
+        if not isinstance(fn, FunctionType):
+            hence_log("error", "One or more @task is not FunctionType in `fn_list`.")
+            raise TypeError("One or more @task is not FunctionType in `fn_list`.")
+
+    _dag = setup_dag(fn_list)
+    execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
 
 
 def setup_dag(vertices: list) -> DAG:
