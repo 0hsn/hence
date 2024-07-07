@@ -483,3 +483,31 @@ class LinearExecutor:
         for vertex, result in vertices_result:
             if not isinstance(vertex, WorkGroup) and len(vertex.id) > 0:
                 self._results[vertex.id] = result
+
+
+class FunctionTypeExecutor:
+    """Linear executor"""
+
+    RES_KEY = "__works__"
+
+    def __init__(self) -> None:
+        """init LinearExecutor"""
+
+        self._results = {}
+
+    def param(self, vertex: Any) -> Any:
+        """Selecting parameters"""
+
+        return vertex
+
+    def execute(self, task_: FunctionType) -> Any:
+        """Execute"""
+
+        t_info = hence_config.context_search(CTX_FN_BASE, task_.__name__)
+
+        t_title = t_info["title"] if "title" in t_info else task_.__name__
+        t_params = t_info["parameters"] if "parameters" in t_info else {}
+
+        hence_log("debug", "`%s` is executing.", t_title)
+
+        return task_(**t_params)
