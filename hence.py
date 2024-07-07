@@ -526,3 +526,13 @@ class FunctionTypeExecutor:
         hence_log("debug", "`%s` is executing.", t_title)
 
         return task_(**t_params)
+
+    def report_finish(self, vertices_result: list):
+        """After execution finished"""
+
+        fn, fn_result = vertices_result[0]
+        fn_obj = hence_config.context_search(CTX_FN_BASE, fn.__name__)
+        fn_obj[CTX_FN_KEY_RES] = fn_result
+
+        hence_config.context_add(CTX_FN_BASE, {fn.__name__: fn_obj})
+        hence_log("debug", "context.func: %s", hence_config.context.get())
