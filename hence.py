@@ -51,7 +51,7 @@ class HenceConfig:
 
         context_val = self.context.get()
 
-        if "func" in context_val:
+        if CTX_FN_BASE in context_val:
             context_val[key] = context_val[key] | obj
 
     def context_search(self, key: str, obj_key: str):
