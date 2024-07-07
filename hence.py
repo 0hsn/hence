@@ -230,6 +230,21 @@ def setup_dag(vertices: list) -> DAG:
         _dag.add_edge(vertices[index - 1], vertices[index])
 
     return _dag
+
+
+def execute_dag(
+    dag: DAG,
+    processor_: Union[SequentialProcessor, MultiThreadProcessor],
+    executor_: ExecutorContract,
+) -> list:
+    """Execute the dag"""
+
+    if not isinstance(dag, DAG):
+        raise TypeError(f"Not a DAG. type: {type(dag)}")
+
+    return dag_run(dag, processor=processor_, executor=executor_)
+
+
 def work(
     before: Callable = lambda: ...,
     after: Callable = lambda: ...,
