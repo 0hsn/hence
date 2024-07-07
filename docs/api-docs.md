@@ -1,5 +1,9 @@
 # API Docs
 
+- [Task](#task)
+  - [Define a task and run it](#define-a-task-and-run-it)
+  - [Run tasks with no params](#run-tasks-with-no-params)
+  - [Run tasks with params](#run-tasks-with-params)
 - [Work](#work)
   - [Defining a work](#defining-a-work)
   - [Work with `before` and `after` hook](#work-with-before-and-after-hook)
@@ -14,6 +18,63 @@
   - [Using a WorkGroup](#using-a-workgroup)
   - [Accessing previous step data in runtime](#accessing-previous-step-data-in-runtime)
 - [WorkFlow](#workflow)
+
+---
+
+## Task
+
+_Added in `[v0.9]`_
+
+An alternative implementation for `@work` decorator, that is more cognitive friendly. To create a task based minimal workflow. Task represents smallest unit of work.
+
+Task can be created using `@task()` decorator.
+
+**Parameters**
+
+`title` String type. Represents the title of the task.
+
+### Define a task and run it
+
+```python
+@task(title="")
+def fn_1(**kwargs):
+  ...
+
+fn_1(var1=1, val2="sample string")
+```
+
+### Run tasks with no params
+
+```python
+@task(title="")
+def fn_1(**kwargs):
+  ...
+
+@task(title="", needs=[fn_1])
+def fn_2(**kwargs):
+  ...
+
+run_tasks([
+  (fn_1, {}),
+  (fn_2, {}),
+])
+```
+
+### Run tasks with params
+
+```python
+@task(title="")
+def fn_1(**kwargs):
+  ...
+
+# run all the tasks
+# - with no params to pass to tasks
+run_tasks([
+  (fn_1, {var1: "string", var2: 23}),
+])
+```
+
+---
 
 ## Work
 
