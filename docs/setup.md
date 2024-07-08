@@ -10,6 +10,10 @@
 
     > I intent to keep `main` branch stable. I will also release stable tags. Therefore, anyone should be able to install from a specific tag.
 
+    ```shell
+    pip install -U git+https://github.com/0hsn/hence.git@v0.9.0
+    ```
+
 ## Development
 
 This software use Pipenv for development. Therefore please [install Pipenv](https://pipenv.pypa.io/en/latest/installation.html#installing-pipenv) it beforehand.

@@ -1,5 +1,12 @@
 # API Docs
 
+- [Hence Config](#hence-config)
+  - [Enable logging](#enable-logging)
+  - [Access task result after running tasks](#access-task-result-after-running-tasks)
+- [Task](#task)
+  - [Define a task and run it](#define-a-task-and-run-it)
+  - [Run tasks with no params](#run-tasks-with-no-params)
+  - [Run tasks with params](#run-tasks-with-params)
 - [Work](#work)
   - [Defining a work](#defining-a-work)
   - [Work with `before` and `after` hook](#work-with-before-and-after-hook)
@@ -14,6 +21,107 @@
   - [Using a WorkGroup](#using-a-workgroup)
   - [Accessing previous step data in runtime](#accessing-previous-step-data-in-runtime)
 - [WorkFlow](#workflow)
+
+---
+
+## Hence Config
+
+_Added in `[v0.9]`_
+
+Hence config is a utility that can be used for several purpose, such as access context data, logging, etc. A global hence configuration is already created on module loading.
+
+### Enable logging
+
+```python
+from hence import hence_config
+
+...
+# to enable logging to stderr
+hence_config.enable_log = True
+```
+
+### Access task result after running tasks
+
+It is possible to access internal state data in between task steps using `hence_config.task_result`.
+
+Signature:
+
+```http
+HenceConfig.task_result(obj_key: str)
+
+Parameters:
+    obj_key: string, name of the function to access result for.
+
+Returns:
+    - Resulting object of function found.
+    - None when function not found.
+```
+
+```python
+from hence import hence_config
+
+...
+
+# returns return from function_name call
+hence_config.task_result("function_name")
+```
+
+## Task
+
+_Added in `[v0.9]`_
+
+An alternative implementation for `@work` decorator, that is more cognitive friendly. To create a task based minimal workflow. Task represents smallest unit of work.
+
+Task can be created using `@task()` decorator.
+
+Here is [web scraper](../tests/samples/web_scraping_2.py) implemented.
+
+**Parameters**
+
+`title` String type. Represents the title of the task.
+
+### Define a task and run it
+
+```python
+@task(title="")
+def fn_1(**kwargs):
+  ...
+
+fn_1(var1=1, val2="sample string")
+```
+
+### Run tasks with no params
+
+```python
+@task(title="")
+def fn_1(**kwargs):
+  ...
+
+@task(title="")
+def fn_2(**kwargs):
+  ...
+
+run_tasks([
+  (fn_1, {}),
+  (fn_2, {}),
+])
+```
+
+### Run tasks with params
+
+```python
+@task(title="")
+def fn_1(**kwargs):
+  ...
+
+# run all the tasks
+# - with no params to pass to tasks
+run_tasks([
+  (fn_1, {var1: "string", var2: 23}),
+])
+```
+
+---
 
 ## Work
 

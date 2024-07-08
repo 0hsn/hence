@@ -207,12 +207,14 @@ def task(title: str = None) -> list:
     def _internal(function):
         """Internal handler"""
 
-        hence_log("debug", "title `%s` registered.", title)
+        t_title = title if title else function.__name__
+
+        hence_log("debug", "title `%s` registered.", t_title)
         hence_config.context_add(
             CTX_FN_BASE,
             {
                 function.__name__: {
-                    CTX_FN_KEY_TIT: title,
+                    CTX_FN_KEY_TIT: t_title,
                 }
             },
         )
