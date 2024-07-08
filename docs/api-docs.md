@@ -26,6 +26,8 @@
 
 ## Hence Config
 
+_Added in `[v0.9]`_
+
 Hence config is a utility that can be used for several purpose, such as access context data, logging, etc. A global hence configuration is already created on module loading.
 
 ### Enable logging
