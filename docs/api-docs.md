@@ -1,5 +1,8 @@
 # API Docs
 
+- [Hence Config](#hence-config)
+  - [Enable logging](#enable-logging)
+  - [Access task result after running tasks](#access-task-result-after-running-tasks)
 - [Task](#task)
   - [Define a task and run it](#define-a-task-and-run-it)
   - [Run tasks with no params](#run-tasks-with-no-params)
@@ -20,6 +23,46 @@
 - [WorkFlow](#workflow)
 
 ---
+
+## Hence Config
+
+Hence config is a utility that can be used for several purpose, such as access context data, logging, etc. A global hence configuration is already created on module loading.
+
+### Enable logging
+
+```python
+from hence import hence_config
+
+...
+# to enable logging to stderr
+hence_config.enable_log = True
+```
+
+### Access task result after running tasks
+
+It is possible to access internal state data in between task steps using `hence_config.task_result`.
+
+Signature:
+
+```http
+HenceConfig.task_result(obj_key: str)
+
+Parameters:
+    obj_key: string, name of the function to access result for.
+
+Returns:
+    - Resulting object of function found.
+    - None when function not found.
+```
+
+```python
+from hence import hence_config
+
+...
+
+# returns return from function_name call
+hence_config.task_result("function_name")
+```
 
 ## Task
 
@@ -52,7 +95,7 @@ fn_1(var1=1, val2="sample string")
 def fn_1(**kwargs):
   ...
 
-@task(title="", needs=[fn_1])
+@task(title="")
 def fn_2(**kwargs):
   ...
 
