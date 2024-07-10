@@ -1,6 +1,6 @@
 [project]
 name = "hence"
-version = "0.8.0"
+version = "0.9.0"
 authors = [{ name = "Mahmudul Hasan", email = "hasanlock@gmail.com" }]
 description = "Hence, a powerful framework designed to streamline data pipeline, scraping, automation workflow orchestration."
 readme = "README.md"
