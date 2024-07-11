@@ -45,7 +45,7 @@ class HenceConfig:
         logger.addHandler(stdout_log_handler)
         logger.setLevel(logging.DEBUG)
 
-    def context_add(self, key: str, obj: dict):
+    def context_add(self, key: str, obj: dict) -> None:
         """Add to context"""
 
         if not isinstance(obj, dict):
@@ -54,7 +54,7 @@ class HenceConfig:
 
         context_val = self.context.get()
 
-        if CTX_FN_BASE in context_val:
+        if key in context_val:
             context_val[key] = context_val[key] | obj
 
     def context_search(self, key: str, obj_key: str):
