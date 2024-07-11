@@ -201,10 +201,10 @@ class WorkExecFrame:
         return self.function_out
 
 
-def task(title: str = None) -> list:
+def task(title: str = None) -> Any:
     """Task"""
 
-    def _internal(function):
+    def _internal(function: FunctionType):
         """Internal handler"""
 
         t_title = title if title else function.__name__
@@ -220,14 +220,14 @@ def task(title: str = None) -> list:
         )
 
         if "kwargs" not in function.__code__.co_varnames:
-            hence_log("error", "Missing %s(..., **kwargs).", type(function).__name__)
-            raise TypeError(f"Missing {type(function).__name__}(..., **kwargs).")
+            hence_log("error", "Missing `**kwargs` in %s args.", function.__name__)
+            raise TypeError(f"Missing `**kwargs` in {function.__name__} args.")
 
         @wraps(function)
-        def _decorator(**kwargs):
+        def _decorator(**kwargs: dict) -> Any:
             """decorator"""
 
-            hence_log("debug", "`%s` called with %s.", type(function).__name__, kwargs)
+            hence_log("debug", "`%s` called with %s.", function.__name__, kwargs)
             return function(**kwargs)
 
         return _decorator
