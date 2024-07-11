@@ -11,7 +11,7 @@ from json import loads, dumps
 import logging
 import sys
 from types import FunctionType
-from typing import Any, Callable, Protocol, Union, final
+from typing import Any, Callable, Protocol, TypeAlias, Union, final
 
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
@@ -235,7 +235,11 @@ def task(title: str = None) -> Any:
     return _internal
 
 
-def run_tasks(fnt_list: list[FunctionType]) -> list[FunctionType]:
+TaskWithParams: TypeAlias = tuple[FunctionType, dict]
+"""run_tasks param"""
+
+
+def run_tasks(fnt_list: list[TaskWithParams]) -> list[FunctionType]:
     """Run @task"""
 
     fn_list = []
