@@ -18,7 +18,6 @@ from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
 CTX_NAME = "hence_context"
 CTX_FN_BASE = "func"
-CTX_FN_KEY_TIT = "title"
 CTX_FN_KEY_PAR = "parameters"
 CTX_FN_KEY_RES = "result"
 
@@ -63,7 +62,6 @@ class HenceConfig:
         context_val = self.context.get()
 
         if key in context_val:
-            if obj_key in context_val[key]:
                 return context_val[key][obj_key]
 
         hence_log("error", "Object with key: `%s` not found.", key)
