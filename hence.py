@@ -55,18 +55,28 @@ class HenceConfig:
 
         context_val[key] = context_val[key] | obj if key in context_val else obj
 
-    def context_search(self, key: str, obj_key: str):
+    def context_search(self, key: str, obj_key: str) -> Any:
         """Search in context"""
 
         context_val = self.context.get()
 
-        if key in context_val:
-                return context_val[key][obj_key]
+        if key not in context_val:
+            hence_log("error", "Object with key: `%s` not found.", key)
+            raise KeyError(f"Object with key: `{key}` not found.")
 
-        hence_log("error", "Object with key: `%s` not found.", key)
-        raise NotImplementedError(f"Object with key: `{key}` not found.")
+        if obj_key not in context_val[key]:
+            hence_log("error", "Object with key: `%s` not found.", obj_key)
+            raise KeyError(f"Object with key: `{obj_key}` not found.")
 
-    def task_result(self, obj_key: str):
+        hence_log(
+            "debug",
+            "returning : `%s` for %s.%s .",
+            context_val[key][obj_key],
+            key,
+            obj_key,
+        )
+
+        return context_val[key][obj_key]
         """Search in context"""
 
         obj = self.context_search(CTX_FN_BASE, obj_key)
