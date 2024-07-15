@@ -13,14 +13,13 @@ import sys
 from types import FunctionType
 from typing import Any, Callable, Protocol, Union, final
 
+from immutabledict import immutabledict
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
 
 CTX_NAME = "hence_context"
 CTX_FN_BASE = "func"
-CTX_FN_KEY_TIT = "title"
-CTX_FN_KEY_PAR = "parameters"
-CTX_FN_KEY_RES = "result"
+CTX_TI_BASE = "title"
 
 
 class HenceConfig:
@@ -45,7 +44,7 @@ class HenceConfig:
         logger.addHandler(stdout_log_handler)
         logger.setLevel(logging.DEBUG)
 
-    def context_add(self, key: str, obj: dict):
+    def context_add(self, key: str, obj: FuncConfig) -> None:
         """Add to context"""
 
         if not isinstance(obj, dict):
@@ -54,26 +53,36 @@ class HenceConfig:
 
         context_val = self.context.get()
 
-        if CTX_FN_BASE in context_val:
-            context_val[key] = context_val[key] | obj
+        context_val[key] = context_val[key] | obj if key in context_val else obj
 
-    def context_search(self, key: str, obj_key: str):
+    def context_search(self, key: str, obj_key: str) -> Any:
         """Search in context"""
 
         context_val = self.context.get()
 
-        if key in context_val:
-            if obj_key in context_val[key]:
-                return context_val[key][obj_key]
+        if key not in context_val:
+            hence_log("error", "Object with key: `%s` not found.", key)
+            raise KeyError(f"Object with key: `{key}` not found.")
 
-        hence_log("error", "Object with key: `%s` not found.", key)
-        raise NotImplementedError(f"Object with key: `{key}` not found.")
+        if obj_key not in context_val[key]:
+            hence_log("error", "Object with key: `%s` not found.", obj_key)
+            raise KeyError(f"Object with key: `{obj_key}` not found.")
 
-    def task_result(self, obj_key: str):
+        hence_log(
+            "debug",
+            "returning : `%s` for %s.%s .",
+            context_val[key][obj_key],
+            key,
+            obj_key,
+        )
+
+        return context_val[key][obj_key]
+
+    def task_result(self, obj_key: str) -> Any:
         """Search in context"""
 
-        obj = self.context_search(CTX_FN_BASE, obj_key)
-        return obj[CTX_FN_KEY_RES] if CTX_FN_KEY_RES in obj else None
+        obj: FuncConfig = self.context_search(CTX_FN_BASE, obj_key)
+        return obj.result
 
 
 logger = logging.getLogger("hence")
@@ -209,15 +218,9 @@ def task(title: str = None) -> Any:
 
         t_title = title if title else function.__name__
 
+        # save function title to context
         hence_log("debug", "title `%s` registered.", t_title)
-        hence_config.context_add(
-            CTX_FN_BASE,
-            {
-                function.__name__: {
-                    CTX_FN_KEY_TIT: t_title,
-                }
-            },
-        )
+        hence_config.context_add(CTX_TI_BASE, {function.__name__: t_title})
 
         if "kwargs" not in function.__code__.co_varnames:
             hence_log("error", "Missing `**kwargs` in %s args.", function.__name__)
@@ -235,29 +238,64 @@ def task(title: str = None) -> Any:
     return _internal
 
 
-def run_tasks(fnt_list: list[FunctionType]) -> list[FunctionType]:
+class FuncConfig:
+    """FuncConfig"""
+
+    function: FunctionType
+    parameters: immutabledict
+    run_id: str = ""
+    title: str = ""
+    result: Any = None
+
+    def __init__(self, fn: FunctionType, params: dict, rid: str = "") -> None:
+        """constructor"""
+
+        self.function = fn
+        self.parameters = immutabledict(params)
+        self.run_id = rid
+        self.title = fn.__name__
+
+    @property
+    def task_key(self) -> str:
+        """Make a context key for functions"""
+
+        if not self.function:
+            raise ValueError("function is empty.")
+
+        task_key_ = self.function.__name__
+
+        if self.run_id:
+            task_key_ += "." + self.run_id
+
+        return task_key_
+
+    def asdict(self) -> dict:
+        """asdict"""
+
+        result = self.__dict__
+        if "parameters" in result:
+            result["parameters"] = dict(result["parameters"])
+
+        return result
+
+
+def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
     """Run @task"""
 
     fn_list = []
-    for fn, fn_params in fnt_list:
-        fn_obj = hence_config.context_search(CTX_FN_BASE, fn.__name__)
-        fn_obj[CTX_FN_KEY_PAR] = fn_params
+    for fn_config_tpl in fn_config_list:
 
-        hence_config.context_add(CTX_FN_BASE, {fn.__name__: fn_obj})
-        fn_list.append(fn)
+        fn_config = FuncConfig(*fn_config_tpl)
 
-    if not isinstance(fn_list, list):
-        hence_log("error", "`fn_list` does not contain a list of `@task`.")
-        raise TypeError("`fn_list` does not contain a list of `@task`.")
+        hence_log("debug", "`run_tasks` :: %s, %s, %s", *fn_config_tpl)
+
+        hence_config.context_add(CTX_FN_BASE, {fn_config.task_key: fn_config})
+
+        fn_list.append(fn_config.task_key)
 
     if not fn_list:
         hence_log("error", "`fn_list` does not contain any `@task`.")
         raise TypeError("`fn_list` does not contain any `@task`.")
-
-    for fn in fn_list:
-        if not isinstance(fn, FunctionType):
-            hence_log("error", "One or more @task is not FunctionType in `fn_list`.")
-            raise TypeError("One or more @task is not FunctionType in `fn_list`.")
 
     _dag = setup_dag(fn_list)
     return execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
@@ -559,24 +597,23 @@ class FunctionTypeExecutor:
 
         return vertex
 
-    def execute(self, task_: FunctionType) -> Any:
+    def execute(self, task_key: str) -> Any:
         """Execute"""
 
-        t_info = hence_config.context_search(CTX_FN_BASE, task_.__name__)
-
-        t_title = t_info["title"] if "title" in t_info else task_.__name__
-        t_params = t_info["parameters"] if "parameters" in t_info else {}
+        fn_cfg: FuncConfig = hence_config.context_search(CTX_FN_BASE, task_key)
+        t_title = hence_config.context_search(CTX_TI_BASE, fn_cfg.function.__name__)
 
         hence_log("debug", "`%s` is executing.", t_title)
 
-        return task_(**t_params)
+        return fn_cfg.function(**fn_cfg.parameters)
 
     def report_finish(self, vertices_result: list):
         """After execution finished"""
 
-        fn, fn_result = vertices_result[0]
-        fn_obj = hence_config.context_search(CTX_FN_BASE, fn.__name__)
-        fn_obj[CTX_FN_KEY_RES] = fn_result
+        fn_key, fn_result = vertices_result[0]
 
-        hence_config.context_add(CTX_FN_BASE, {fn.__name__: fn_obj})
+        fn_obj: FuncConfig = hence_config.context_search(CTX_FN_BASE, fn_key)
+        fn_obj.result = fn_result
+
+        hence_config.context_add(CTX_FN_BASE, {fn_key: fn_obj})
         hence_log("debug", "context.func: %s", hence_config.context.get())
