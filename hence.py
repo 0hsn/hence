@@ -44,7 +44,7 @@ class HenceConfig:
         logger.addHandler(stdout_log_handler)
         logger.setLevel(logging.DEBUG)
 
-    def context_add(self, key: str, obj: dict) -> None:
+    def context_add(self, key: str, obj: FuncConfig) -> None:
         """Add to context"""
 
         if not isinstance(obj, dict):
@@ -53,8 +53,7 @@ class HenceConfig:
 
         context_val = self.context.get()
 
-        if key in context_val:
-            context_val[key] = context_val[key] | obj
+        context_val[key] = context_val[key] | obj if key in context_val else obj
 
     def context_search(self, key: str, obj_key: str):
         """Search in context"""
