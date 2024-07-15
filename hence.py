@@ -77,10 +77,12 @@ class HenceConfig:
         )
 
         return context_val[key][obj_key]
+
+    def task_result(self, obj_key: str) -> Any:
         """Search in context"""
 
-        obj = self.context_search(CTX_FN_BASE, obj_key)
-        return obj[CTX_FN_KEY_RES] if CTX_FN_KEY_RES in obj else None
+        obj: FuncConfig = self.context_search(CTX_FN_BASE, obj_key)
+        return obj.result
 
 
 logger = logging.getLogger("hence")
