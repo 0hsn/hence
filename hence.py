@@ -11,7 +11,7 @@ from json import loads, dumps
 import logging
 import sys
 from types import FunctionType
-from typing import Any, Callable, Protocol, TypeAlias, Union, final
+from typing import Any, Callable, Protocol, Union, final
 
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
@@ -235,9 +235,36 @@ def task(title: str = None) -> Any:
     return _internal
 
 
-TaskWithParams: TypeAlias = tuple[FunctionType, dict]
-"""run_tasks param"""
+class FuncConfig:
+    """FuncConfig"""
 
+    function: FunctionType
+    parameters: immutabledict
+    run_id: str = ""
+    title: str = ""
+    result: Any = None
+
+    def __init__(self, fn: FunctionType, params: dict, rid: str = "") -> None:
+        """constructor"""
+
+        self.function = fn
+        self.parameters = immutabledict(params)
+        self.run_id = rid
+        self.title = fn.__name__
+
+    @property
+    def task_key(self) -> str:
+        """Make a context key for functions"""
+
+        if not self.function:
+            raise ValueError("function is empty.")
+
+        task_key_ = self.function.__name__
+
+        if self.run_id:
+            task_key_ += "." + self.run_id
+
+        return task_key_
 
 def run_tasks(fnt_list: list[TaskWithParams]) -> list[FunctionType]:
     """Run @task"""
