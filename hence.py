@@ -267,6 +267,14 @@ class FuncConfig:
         return task_key_
 
 def run_tasks(fnt_list: list[TaskWithParams]) -> list[FunctionType]:
+    def asdict(self) -> dict:
+        """asdict"""
+
+        result = self.__dict__
+        if "parameters" in result:
+            result["parameters"] = dict(result["parameters"])
+
+        return result
     """Run @task"""
 
     fn_list = []
