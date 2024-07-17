@@ -29,7 +29,7 @@
 
 ## Hence Config
 
-_Added in `[v0.9]`_
+_Added in `[v0.9.*]`_
 
 Hence config is a multipurpose utility, such as access context data, logging, etc. A global hence configuration is already created on module loading.
 
@@ -100,7 +100,7 @@ task_inf.task_key # str[function_name.456]
 
 ## Task
 
-_Added in `[v0.9]`_
+_Added in `[v0.9.*]`_
 
 An alternative implementation for `@work` decorator, that is more cognitive friendly. To create a task based minimal workflow. Task represents smallest unit of work.
 
