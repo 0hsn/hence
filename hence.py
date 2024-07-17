@@ -54,7 +54,7 @@ class HenceConfig:
         context_val = self.context.get()
 
         context_val[key] = context_val[key] | obj if key in context_val else obj
-        hence_log("error", "Context:: %s.", self.context)
+        hence_log("debug", "Context:: %s.", self.context)
 
     def context_search(self, key: str, obj_key: str) -> Any:
         """Search in context"""
@@ -601,7 +601,26 @@ class FunctionTypeExecutor:
         """Execute"""
 
         fn_cfg: FuncConfig = hence_config.context_search(CTX_FN_BASE, task_key)
-        t_title = hence_config.context_search(CTX_TI_BASE, fn_cfg.function.__name__)
+        t_title: str = hence_config.context_search(
+            CTX_TI_BASE, fn_cfg.function.__name__
+        )
+
+        # replace supported variables in title
+        if "{" in t_title and "}" in t_title:
+            _task: FuncConfig = hence_config.task(task_key)
+
+            try:
+                t_title = t_title.format(
+                    fn_key=_task.task_key,
+                    fn_name=_task.function.__name__,
+                    fn_run_id=_task.run_id,
+                )
+            except KeyError as e:
+                hence_log("error", "`%s` not found in task.title.", str(e))
+                raise e
+
+            _task.title = t_title
+            hence_config.context_add(CTX_FN_BASE, {task_key: _task})
 
         hence_log("debug", "`%s::%s` is executing.", t_title, task_key)
 
