@@ -360,7 +360,7 @@ class TestWorkGroupListCapability:
         wg.append(WorkExecFrame(function=ImplementedWork()))
 
         assert isinstance(wg, WorkGroup)
-        assert all(isinstance(item, WorkExecFrame) for item in wg)
+        assert all(isinstance(item, WorkExecFrame) for item in wg._works)
 
     @staticmethod
     def test___validate_type__fail_for_abstract_work_missing_kwargs():

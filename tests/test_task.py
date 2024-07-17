@@ -100,13 +100,11 @@ class TestRunTask:
     def test_run_tasks_pass_with_replace_title():
         """test run tasks pass with replace title"""
 
-        hence_config.enable_log = True
-
         @task(title="task_1-{fn_key}")
         def task_1(**kwargs):
             return task_1.__name__
 
-        @task(title="task_2-{fn_fn_run_id}")
+        @task(title="task_2-{fn_run_id}")
         def task_2(**kwargs):
             return task_2.__name__
 
