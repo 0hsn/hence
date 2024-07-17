@@ -79,11 +79,10 @@ class HenceConfig:
 
         return context_val[key][obj_key]
 
-    def task_result(self, obj_key: str) -> Any:
-        """Search in context"""
+    def task(self, obj_key: str) -> FuncConfig:
+        """Get a task by key"""
 
-        obj: FuncConfig = self.context_search(CTX_FN_BASE, obj_key)
-        return obj.result
+        return self.context_search(CTX_FN_BASE, obj_key)
 
 
 logger = logging.getLogger("hence")
@@ -278,9 +277,6 @@ class FuncConfig:
             result["parameters"] = dict(result["parameters"])
 
         return result
-
-    def update_title(self, n_title: str) -> None:
-        """Update title for task config"""
 
 
 def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:

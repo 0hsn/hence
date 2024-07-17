@@ -27,7 +27,7 @@ def fetch_content(**kwargs):
 def get_the_title(**kwargs) -> dict:
     """Parse the content in <title>"""
 
-    if (html := hence_config.task_result("fetch_content")) is not None:
+    if (html := hence_config.task("fetch_content").result) is not None:
         html = bytes.fromhex(html).decode("utf-8")
 
         html.find("<h1>")
@@ -43,7 +43,7 @@ def get_the_title(**kwargs) -> dict:
 def save_to_csv(**kwargs) -> str:
     """save the content to csv"""
 
-    if (ret := hence_config.task_result("get_the_title")) is not None:
+    if (ret := hence_config.task("get_the_title").result) is not None:
         with open("example.org-data.csv", "w+", encoding="utf-8") as csv_file:
             writer = csv.writer(csv_file)
 

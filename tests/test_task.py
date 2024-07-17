@@ -1,7 +1,7 @@
 """Test @task()"""
 
 from icecream import ic
-from hence import hence_config, task, run_tasks
+from hence import hence_config, task, run_tasks, CTX_TI_BASE
 
 
 class TestTaskDecorator:
@@ -71,8 +71,8 @@ class TestRunTask:
             ]
         )
 
-        assert task_1.__name__ == hence_config.task_result(task_1.__name__)
-        assert task_2.__name__ == hence_config.task_result(task_2.__name__)
+        assert task_1.__name__ == hence_config.task(task_1.__name__).title
+        assert task_2.__name__ == hence_config.task(task_2.__name__).title
 
     @staticmethod
     def test_run_tasks_pass_with_tag():
@@ -93,5 +93,5 @@ class TestRunTask:
             ]
         )
 
-        assert task_1.__name__ == hence_config.task_result(task_1.__name__ + ".11111")
-        assert task_2.__name__ == hence_config.task_result(task_2.__name__ + ".22222")
+        assert task_1.__name__ == hence_config.task(task_1.__name__ + ".11111").title
+        assert task_2.__name__ == hence_config.task(task_2.__name__ + ".22222").title
