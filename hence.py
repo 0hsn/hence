@@ -279,6 +279,9 @@ class FuncConfig:
 
         return result
 
+    def update_title(self, n_title: str) -> None:
+        """Update title for task config"""
+
 
 def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
     """Run @task"""
@@ -604,7 +607,7 @@ class FunctionTypeExecutor:
         fn_cfg: FuncConfig = hence_config.context_search(CTX_FN_BASE, task_key)
         t_title = hence_config.context_search(CTX_TI_BASE, fn_cfg.function.__name__)
 
-        hence_log("debug", "`%s` is executing.", t_title)
+        hence_log("debug", "`%s::%s` is executing.", t_title, task_key)
 
         return fn_cfg.function(**fn_cfg.parameters)
 
