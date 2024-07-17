@@ -42,12 +42,12 @@ hence_config.enable_log = True
 
 ### Access task result after running tasks
 
-It is possible to access internal state data in between task steps using `hence_config.task_result`.
+It is possible to access internal state data in between task steps using `hence_config.task`.
 
 Signature:
 
 ```http
-HenceConfig.task_result(obj_key: str)
+HenceConfig.task(obj_key: str)
 
 Parameters:
     obj_key: string, name of the function to access result for.
@@ -62,8 +62,9 @@ from hence import hence_config
 
 ...
 
-# returns return from function_name call
-hence_config.task_result("function_name")
+# returns TaskConfig  from context
+task_inf = hence_config.task("function_name")
+task_inf.result # contains task result when task is executed or None
 ```
 
 ## Task
