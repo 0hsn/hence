@@ -54,6 +54,7 @@ class HenceConfig:
         context_val = self.context.get()
 
         context_val[key] = context_val[key] | obj if key in context_val else obj
+        hence_log("error", "Context:: %s.", self.context)
 
     def context_search(self, key: str, obj_key: str) -> Any:
         """Search in context"""
@@ -287,7 +288,7 @@ def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
 
         fn_config = FuncConfig(*fn_config_tpl)
 
-        hence_log("debug", "`run_tasks` :: %s, %s, %s", *fn_config_tpl)
+        hence_log("debug", "`run_tasks` :: %s", fn_config_tpl)
 
         hence_config.context_add(CTX_FN_BASE, {fn_config.task_key: fn_config})
 
@@ -616,4 +617,4 @@ class FunctionTypeExecutor:
         fn_obj.result = fn_result
 
         hence_config.context_add(CTX_FN_BASE, {fn_key: fn_obj})
-        hence_log("debug", "context.func: %s", hence_config.context.get())
+        hence_log("debug", "Context.func: %s", hence_config.context.get())
