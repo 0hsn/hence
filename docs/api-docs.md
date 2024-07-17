@@ -3,10 +3,13 @@
 - [Hence Config](#hence-config)
   - [Enable logging](#enable-logging)
   - [Access task result after running tasks](#access-task-result-after-running-tasks)
+  - [Access `FuncConfig` as a dict](#access-funcconfig-as-a-dict)
+  - [Access `task_key` from `FuncConfig`](#access-task_key-from-funcconfig)
 - [Task](#task)
   - [Define a task and run it](#define-a-task-and-run-it)
   - [Run tasks with no params](#run-tasks-with-no-params)
   - [Run tasks with params](#run-tasks-with-params)
+  - [Run tasks with `run_id`](#run-tasks-with-run_id)
 - [Work](#work)
   - [Defining a work](#defining-a-work)
   - [Work with `before` and `after` hook](#work-with-before-and-after-hook)
@@ -20,7 +23,7 @@
 - [WorkGroup](#workgroup)
   - [Using a WorkGroup](#using-a-workgroup)
   - [Accessing previous step data in runtime](#accessing-previous-step-data-in-runtime)
-- [WorkFlow(#workflow)
+- [WorkFlow](#workflow)
 
 ---
 
@@ -28,7 +31,7 @@
 
 _Added in `[v0.9]`_
 
-Hence config is a utility that can be used for several purpose, such as access context data, logging, etc. A global hence configuration is already created on module loading.
+Hence config is a multipurpose utility, such as access context data, logging, etc. A global hence configuration is already created on module loading.
 
 ### Enable logging
 
@@ -53,7 +56,7 @@ Parameters:
     obj_key: string, name of the function to access result for.
 
 Returns:
-    - Resulting object of function found.
+    - Resulting FuncConfig object for the function key given.
     - None when function not found.
 ```
 
@@ -62,9 +65,37 @@ from hence import hence_config
 
 ...
 
-# returns TaskConfig  from context
+# returns FuncConfig  from context
 task_inf = hence_config.task("function_name")
 task_inf.result # contains task result when task is executed or None
+```
+
+`FuncConfig` object holds details of a function execution. For each function that is passed to `run_tasks` a `FuncConfig` object is created and saved in the context.
+
+### Access `FuncConfig` as a dict
+
+```python
+...
+
+# returns FuncConfig  from context
+task_inf = hence_config.task("function_name")
+task_inf.asdict()
+```
+
+### Access `task_key` from `FuncConfig`
+
+When you pass a `run_id` as a `run_tasks()` parameter, the function key gets updated. See [details here](#run-tasks-with-run_id). You can access that unique task execution identifier as follows.
+
+```python
+...
+
+run_tasks([
+    (function_name, {}, "456")
+])
+
+# returns FuncConfig  from context
+task_inf = hence_config.task("function_name")
+task_inf.task_key # str[function_name.456]
 ```
 
 ## Task
@@ -79,14 +110,16 @@ Here is [web scraper](../tests/samples/web_scraping_2.py) implemented.
 
 **Parameters**
 
-`title` String type. Represents the title of the task.
+`title` String type. Represents the title of the task. Title can contain `{fn_key}`, `{fn_name}`, `{fn_run_id}` these values to distinguish from other similar group.
+
 
 ### Define a task and run it
 
 ```python
-@task(title="")
+@task()
 def fn_1(**kwargs):
-  ...
+  assert kwargs["var1"] == 1
+  assert kwargs["val2"] == "sample string"
 
 fn_1(var1=1, val2="sample string")
 ```
@@ -113,13 +146,51 @@ run_tasks([
 ```python
 @task(title="")
 def fn_1(**kwargs):
-  ...
+  assert kwargs["var1"] == "string"
+  assert kwargs["val2"] == 23
+
 
 # run all the tasks
 # - with no params to pass to tasks
 run_tasks([
   (fn_1, {var1: "string", var2: 23}),
 ])
+```
+
+### Run tasks with `run_id`
+
+In the following example we are running the same function, therefore, we are passing different `run_id` to preserve each task info using different key.
+
+It is _IMPORTANT_ to keep `run_id` _**unique**_.
+
+```python
+from hence import task, run_tasks, hence_config
+
+@task(title="")
+def fn_1(**kwargs):
+  assert kwargs["var1"] == "string"
+  assert kwargs["val2"] == 23
+
+# run all the tasks
+run_tasks([
+  (fn_1, {var1: "string", var2: 23}, "x1"), # x1, x2, x3 is run_id
+  (fn_1, {var1: "string", var2: 23}, "x2"),
+  (fn_1, {var1: "string", var2: 23}, "x3"),
+])
+```
+
+To access the result for each run, you can access as follows. `fn_1.x1`, `fn_1.x2`, `fn_1.x3` are unique function task_key or function run identifier. 
+
+Function run identifier are made of `functon_name.run_id`.
+
+```python
+run_tasks([
+    ...
+])
+
+fn_1_result = hence_config.task("fn_1.x1").result
+fn_2_result = hence_config.task("fn_1.x2").result
+fn_3_result = hence_config.task("fn_1.x3").result
 ```
 
 ---
@@ -444,7 +515,7 @@ wg.execute_dag()
 
 ## WorkFlow
 
-Deprecated in `0.9.4`
+_Deprecated in `0.9.5`_
 
 _WorkFlow_ is a collection of _WorkGroup_. _WorkFlow_ is a top-level flow building block. e.g.
 
