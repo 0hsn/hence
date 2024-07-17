@@ -20,7 +20,7 @@
 - [WorkGroup](#workgroup)
   - [Using a WorkGroup](#using-a-workgroup)
   - [Accessing previous step data in runtime](#accessing-previous-step-data-in-runtime)
-- [WorkFlow](#workflow)
+- [WorkFlow(#workflow)
 
 ---
 
@@ -443,6 +443,8 @@ wg.execute_dag()
 ```
 
 ## WorkFlow
+
+Deprecated in `0.9.4`
 
 _WorkFlow_ is a collection of _WorkGroup_. _WorkFlow_ is a top-level flow building block. e.g.
 
