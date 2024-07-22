@@ -291,9 +291,16 @@ def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
     """Run @task"""
 
     fn_list = []
-    for fn_config_tpl in fn_config_list:
 
-        fn_config = FuncConfig(*fn_config_tpl)
+    for index, fn_config_tpl in enumerate(fn_config_list):
+
+        if len(fn_config_tpl) > 2:
+
+            raise ValueError(
+                f"Only function and parameters are allowed in `{run_tasks.__name__}`"
+            )
+
+        fn_config = FuncConfig(sid=str(index), *fn_config_tpl)
 
         hence_log("debug", "`run_tasks` :: %s", fn_config_tpl)
 
