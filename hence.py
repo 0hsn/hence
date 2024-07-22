@@ -241,19 +241,22 @@ def task(title: str = None) -> Any:
 class FuncConfig:
     """FuncConfig"""
 
-    function: FunctionType
-    parameters: immutabledict
-    run_id: str = ""
-    title: str = ""
-    result: Any = None
-
-    def __init__(self, fn: FunctionType, params: dict, rid: str = "") -> None:
+    def __init__(
+        self, fn: FunctionType, params: dict, rid: str = "", sid: str = ""
+    ) -> None:
         """constructor"""
 
-        self.function = fn
-        self.parameters = immutabledict(params)
-        self.run_id = rid
-        self.title = fn.__name__
+        if not sid:
+            raise ValueError("Sequence id empty.")
+
+        _title = hence_config.context_search(CTX_TI_BASE, fn.__name__)
+
+        self.function: FunctionType = fn
+        self.parameters: immutabledict = immutabledict(params)
+        self.run_id: str = rid
+        self.seq_id: str = sid
+        self.title: str = _title if _title else fn.__name__
+        self.result: Any = None
 
     @property
     def task_key(self) -> str:
