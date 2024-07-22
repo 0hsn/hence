@@ -281,6 +281,11 @@ class FuncConfig:
 
         return result
 
+    def __repr__(self) -> str:
+        """__repr__"""
+
+        return str(self.asdict())
+
 
 def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
     """Run @task"""
