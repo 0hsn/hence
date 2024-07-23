@@ -58,7 +58,7 @@ def fn_1(**kwargs):
 def fn_2(**kwargs):
   ...
 
-run_task_groups([
+run_groups([
   (a_task_group, [null, {"var1": 1, "var2": 2}])
 ])
 ```
@@ -81,7 +81,7 @@ def fn_2(**kwargs):
 # all the task listed to be executed sequencially
 a_task_group = group("group_for_a_task", tasks=[fn_1, fn_2])
 
-run_task_groups([
+run_groups([
   (a_task_group, [])
 ])
 ```
@@ -106,7 +106,7 @@ def fn_1(**kwargs):
 def fn_2(**kwargs):
   ...
 
-run_task_groups([
+run_groups([
   (b_task_group, [])
 ])
 ```
@@ -134,7 +134,7 @@ def fn_2(**kwargs):
 # this will run a_task_group twice
 # - 1st time with params
 # - 2nd time with no params, since params are not passed from calling group
-run_task_groups([
+run_groups([
   (a_task_group, [null, {"var1": 1, "var2": 2}])
   (b_task_group, [])
 ])
@@ -143,8 +143,7 @@ run_task_groups([
 ## Functions
 
 ```python
-
 group(name: str, needs: list)
 run_tasks(lt_tasks: list)
-run_task_groups(lt_groups: list)
+run_groups(lt_groups: list)
 ```
