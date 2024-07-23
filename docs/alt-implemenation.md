@@ -24,7 +24,7 @@ run_tasks([
 ])
 ```
 
-### Run tasks with no params
+### Run tasks with params
 
 ```python
 @task(title="")
@@ -64,6 +64,7 @@ run_task_groups([
 ```
 
 ### Run tasks as a groups (ex 2)
+
 ```python
 @task(title="")
 def fn_1(**kwargs):
@@ -111,6 +112,7 @@ run_task_groups([
 ```
 
 ### Run tasks as a dependent groups (ex 2)
+
 ```python
 a_task_group = group("group_for_a_task")
 
@@ -139,7 +141,6 @@ run_task_groups([
 ```
 
 ## Functions
-
 
 ```python
 
