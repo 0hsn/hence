@@ -73,6 +73,8 @@ class HenceConfig:
     def context_add(self, obj: FuncConfig | GroupConfig | TitleConfig) -> None:
         """Add to context"""
 
+        if not isinstance(obj, (FuncConfig, GroupConfig, TitleConfig)):
+            raise TypeError("context_add :: unsupported type")
 
         if isinstance(obj, FuncConfig):
             context_val = self.context.get()
@@ -82,6 +84,9 @@ class HenceConfig:
             context_val = self.context.get()
             context_val[CTX_TI_BASE][obj.task_key] = obj.title
 
+        elif isinstance(obj, GroupConfig):
+            context_val = self.context.get()
+            context_val[CTX_GR_BASE].append(obj.function_name)
 
         hence_log("debug", "Context:: %s.", self.context)
 
@@ -323,6 +328,7 @@ def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
     fn_list = []
 
     for index, fn_config_tpl in enumerate(fn_config_list):
+        hence_log("debug", "`run_tasks` :: %s", fn_config_tpl)
 
         if len(fn_config_tpl) > 2:
 
