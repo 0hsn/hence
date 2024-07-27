@@ -25,8 +25,11 @@ CTX_TI_BASE = "title"
 class HenceConfig:
     """Hence configuration class"""
 
-    enable_log: bool = False
-    context: ContextVar[dict] = ContextVar(CTX_NAME, default={CTX_FN_BASE: {}})
+    def __init__(self) -> None:
+        """Constructor"""
+
+        self.enable_log: bool = False
+        self.context: ContextVar[dict] = ContextVar(CTX_NAME, default={CTX_FN_BASE: {}})
 
     def logger_config(self):
         """loads or reloads HenceConfig"""
