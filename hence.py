@@ -11,7 +11,7 @@ from json import loads, dumps
 import logging
 import sys
 from types import FunctionType
-from typing import Any, Callable, Protocol, Union, final
+from typing import Any, Callable, NamedTuple, Protocol, Union, final
 
 from immutabledict import immutabledict
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
@@ -20,6 +20,20 @@ from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 CTX_NAME = "hence_context"
 CTX_FN_BASE = "func"
 CTX_TI_BASE = "title"
+CTX_GR_BASE = "group"
+
+
+class TitleConfig(NamedTuple):
+    """TitleConfig"""
+
+    task_key: str
+    title: str
+
+
+class GroupConfig(NamedTuple):
+    """GroupConfig"""
+
+    function_name: str
 
 
 class HenceConfig:
@@ -31,7 +45,14 @@ class HenceConfig:
         self.enable_log: bool = False
         self._logger_config()
 
-        self.context: ContextVar[dict] = ContextVar(CTX_NAME, default={CTX_FN_BASE: {}})
+        self.context: ContextVar[dict] = ContextVar(
+            CTX_NAME,
+            default={
+                CTX_FN_BASE: {},
+                CTX_GR_BASE: [],
+                CTX_TI_BASE: {},
+            },
+        )
 
     def _logger_config(self):
         """Loads or reloads HenceConfig"""
@@ -49,12 +70,18 @@ class HenceConfig:
         logger.addHandler(stdout_log_handler)
         logger.setLevel(logging.DEBUG)
 
-    def context_add(self, key: str, obj: FuncConfig) -> None:
+    def context_add(self, obj: FuncConfig | GroupConfig | TitleConfig) -> None:
         """Add to context"""
+
 
         if isinstance(obj, FuncConfig):
             context_val = self.context.get()
-            context_val[key] = context_val[key] | obj if key in context_val else obj
+            context_val[CTX_FN_BASE][obj.task_key] = obj
+
+        elif isinstance(obj, TitleConfig):
+            context_val = self.context.get()
+            context_val[CTX_TI_BASE][obj.task_key] = obj.title
+
 
         hence_log("debug", "Context:: %s.", self.context)
 
@@ -221,7 +248,9 @@ def task(title: str = None) -> Any:
 
         # save function title to context
         hence_log("debug", "title `%s` registered.", t_title)
-        hence_config.context_add(CTX_TI_BASE, {function.__name__: t_title})
+
+        t_conf = TitleConfig(function.__name__, t_title)
+        hence_config.context_add(t_conf)
 
         if "kwargs" not in function.__code__.co_varnames:
             hence_log("error", "Missing `**kwargs` in %s args.", function.__name__)
@@ -302,10 +331,7 @@ def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
             )
 
         fn_config = FuncConfig(sid=str(index), *fn_config_tpl)
-
-        hence_log("debug", "`run_tasks` :: %s", fn_config_tpl)
-
-        hence_config.context_add(CTX_FN_BASE, {fn_config.task_key: fn_config})
+        hence_config.context_add(fn_config)
 
         fn_list.append(fn_config.task_key)
 
@@ -603,7 +629,7 @@ class FunctionTypeExecutor:
                 raise e
 
             fn_cfg.title = t_title
-            hence_config.context_add(CTX_FN_BASE, {task_key: fn_cfg})
+            hence_config.context_add(fn_cfg)
 
         hence_log("debug", "`%s::%s` is executing.", t_title, task_key)
 
@@ -617,4 +643,4 @@ class FunctionTypeExecutor:
         fn_obj: FuncConfig = hence_config.context_search(CTX_FN_BASE, fn_key)
         fn_obj.result = fn_result
 
-        hence_config.context_add(CTX_FN_BASE, {fn_key: fn_obj})
+        hence_config.context_add(fn_obj)
