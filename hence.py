@@ -124,7 +124,7 @@ logger = logging.getLogger("hence")
 hence_config = HenceConfig()
 
 
-def hence_log(level: str, message: str, *args: list) -> None:
+def hence_log(level: str, message: str, *args) -> None:
     """Final logging function"""
     if not hence_config.enable_log:
         return
