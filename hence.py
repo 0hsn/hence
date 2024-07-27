@@ -52,13 +52,10 @@ class HenceConfig:
     def context_add(self, key: str, obj: FuncConfig) -> None:
         """Add to context"""
 
-        if not isinstance(obj, dict):
-            hence_log("error", "Only dict type supported for obj. found %s.", type(obj))
-            raise TypeError(f"Only dict type supported for obj. found {type(obj)}")
+        if isinstance(obj, FuncConfig):
+            context_val = self.context.get()
+            context_val[key] = context_val[key] | obj if key in context_val else obj
 
-        context_val = self.context.get()
-
-        context_val[key] = context_val[key] | obj if key in context_val else obj
         hence_log("debug", "Context:: %s.", self.context)
 
     def context_search(self, key: str, obj_key: str) -> Any:
