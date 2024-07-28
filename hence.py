@@ -33,6 +33,7 @@ class TitleConfig(NamedTuple):
 class GroupConfig(NamedTuple):
     """GroupConfig"""
 
+    title: str
     function_name: str
 
 
@@ -49,7 +50,7 @@ class HenceConfig:
             CTX_NAME,
             default={
                 CTX_FN_BASE: {},
-                CTX_GR_BASE: [],
+                CTX_GR_BASE: {},
                 CTX_TI_BASE: {},
             },
         )
@@ -86,7 +87,11 @@ class HenceConfig:
 
         elif isinstance(obj, GroupConfig):
             context_val = self.context.get()
-            context_val[CTX_GR_BASE].append(obj.function_name)
+
+            if obj.title not in context_val[CTX_GR_BASE]:
+                context_val[CTX_GR_BASE][obj.title] = [obj.function_name]
+            else:
+                context_val[CTX_GR_BASE][obj.title].append(obj.function_name)
 
         hence_log("debug", "Context:: %s.", self.context)
 
