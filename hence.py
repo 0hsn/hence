@@ -118,6 +118,25 @@ class HenceConfig:
 
         return context_val[key][obj_key]
 
+    def context_get(self, key: str, obj_key: str = "") -> Any:
+        """Get from context"""
+
+        context_val = self.context.get()
+
+        if key not in context_val:
+            hence_log("error", "Object with key: `%s` not found.", key)
+            raise KeyError(f"Object with key: `{key}` not found.")
+
+        if obj_key and obj_key not in context_val[key]:
+            hence_log("error", "Object with key: `%s` not found.", obj_key)
+            raise KeyError(f"Object with key: `{obj_key}` not found.")
+
+        ret_value = context_val[key][obj_key] if obj_key else context_val[key]
+
+        hence_log("debug :: context_get ::", "`%s` for %s.%s.", ret_value, key, obj_key)
+
+        return ret_value
+
     def task(self, obj_key: str) -> FuncConfig:
         """Get a task by key"""
 

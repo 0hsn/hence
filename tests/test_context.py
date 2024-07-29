@@ -59,3 +59,31 @@ class TestHenceConfigContextAdd:
         hc.context_add(GroupConfig("abg", "some_function_2"))
         ctx_val = hc.context.get()
         assert "some_function_2" in ctx_val[CTX_GR_BASE]["abg"]
+
+
+class TestHenceConfigContextGet:
+    """TestHenceConfigContextGet"""
+
+    @staticmethod
+    def test_context_get_pass_for_base_node():
+        """test context get pass for base node"""
+
+        hc = HenceConfig()
+        hc.enable_log = True
+
+        hc.context_add(GroupConfig("abg", "some_function"))
+        ctx_val = hc.context_get(CTX_GR_BASE)
+
+        assert "abg" in ctx_val
+
+    @staticmethod
+    def test_context_get_pass_for_child_node():
+        """test context get pass for child node"""
+
+        hc = HenceConfig()
+        hc.enable_log = True
+
+        hc.context_add(GroupConfig("abg", "some_function_2"))
+        ctx_val = hc.context_get(CTX_GR_BASE, "abg")
+
+        assert "some_function_2" in ctx_val
