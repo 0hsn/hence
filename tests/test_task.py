@@ -44,7 +44,7 @@ class TestTaskDecorator:
 
         sample_task(tag="tag1")
 
-        task_obj = hence_config.context_search(CTX_TI_BASE, "sample_task")
+        task_obj = hence_config.context_get(CTX_TI_BASE, "sample_task")
 
         assert task_obj == "sample_task title"
 

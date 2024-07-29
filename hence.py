@@ -95,29 +95,6 @@ class HenceConfig:
 
         hence_log("debug", "Context:: %s.", self.context)
 
-    def context_search(self, key: str, obj_key: str) -> Any:
-        """Search in context"""
-
-        context_val = self.context.get()
-
-        if key not in context_val:
-            hence_log("error", "Object with key: `%s` not found.", key)
-            raise KeyError(f"Object with key: `{key}` not found.")
-
-        if obj_key not in context_val[key]:
-            hence_log("error", "Object with key: `%s` not found.", obj_key)
-            raise KeyError(f"Object with key: `{obj_key}` not found.")
-
-        hence_log(
-            "debug",
-            "returning : `%s` for %s.%s .",
-            context_val[key][obj_key],
-            key,
-            obj_key,
-        )
-
-        return context_val[key][obj_key]
-
     def context_get(self, key: str, obj_key: str = "") -> Any:
         """Get from context"""
 
@@ -140,7 +117,7 @@ class HenceConfig:
     def task(self, obj_key: str) -> FuncConfig:
         """Get a task by key"""
 
-        return self.context_search(CTX_FN_BASE, obj_key)
+        return self.context_get(CTX_FN_BASE, obj_key)
 
 
 logger = logging.getLogger("hence")
@@ -308,7 +285,7 @@ class FuncConfig:
         if not sid:
             raise ValueError("Sequence id empty.")
 
-        _title = hence_config.context_search(CTX_TI_BASE, fn.__name__)
+        _title = hence_config.context_get(CTX_TI_BASE, fn.__name__)
 
         self.function: FunctionType = fn
         self.parameters: immutabledict = immutabledict(params)
@@ -640,7 +617,7 @@ class FunctionTypeExecutor:
     def execute(self, task_key: str) -> Any:
         """Execute"""
 
-        fn_cfg: FuncConfig = hence_config.context_search(CTX_FN_BASE, task_key)
+        fn_cfg: FuncConfig = hence_config.context_get(CTX_FN_BASE, task_key)
 
         t_title: str = fn_cfg.title
 
@@ -670,7 +647,7 @@ class FunctionTypeExecutor:
 
         fn_key, fn_result = vertices_result[0]
 
-        fn_obj: FuncConfig = hence_config.context_search(CTX_FN_BASE, fn_key)
+        fn_obj: FuncConfig = hence_config.context_get(CTX_FN_BASE, fn_key)
         fn_obj.result = fn_result
 
         hence_config.context_add(fn_obj)

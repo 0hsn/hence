@@ -16,7 +16,7 @@ class TestHenceConfig:
         @hence.task()
         def one_task(**kwargs): ...
 
-        _fc = hence.FuncConfig(one_task, {}, "1")
+        _fc = hence.FuncConfig(one_task, {}, sid="1")
 
         hence.hence_config.context_add(_fc)
         ctx = hence.hence_config.context.get()
