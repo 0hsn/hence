@@ -34,7 +34,9 @@ class GroupConfig(NamedTuple):
     """GroupConfig"""
 
     title: str
-    function_name: str
+    function: FunctionType
+
+
 class FuncConfig:
     """FuncConfig"""
 
@@ -136,9 +138,9 @@ class HenceConfig:
             context_val = self.context.get()
 
             if obj.title not in context_val[CTX_GR_BASE]:
-                context_val[CTX_GR_BASE][obj.title] = [obj.function_name]
+                context_val[CTX_GR_BASE][obj.title] = [obj.function]
             else:
-                context_val[CTX_GR_BASE][obj.title].append(obj.function_name)
+                context_val[CTX_GR_BASE][obj.title].append(obj.function)
 
         hence_log("debug", "Context:: %s.", self.context)
 
