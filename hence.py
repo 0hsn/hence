@@ -35,6 +35,53 @@ class GroupConfig(NamedTuple):
 
     title: str
     function_name: str
+class FuncConfig:
+    """FuncConfig"""
+
+    def __init__(
+        self, fn: FunctionType, params: dict, rid: str = "", sid: str = ""
+    ) -> None:
+        """constructor"""
+
+        if not sid:
+            raise ValueError("Sequence id empty.")
+
+        _title = hence_config.context_get(CTX_TI_BASE, fn.__name__)
+
+        self.function: FunctionType = fn
+        self.parameters: immutabledict = immutabledict(params)
+        self.run_id: str = rid
+        self.seq_id: str = sid
+        self.title: str = _title if _title else fn.__name__
+        self.result: Any = None
+
+    @cached_property
+    def task_key(self) -> str:
+        """Make a context key for functions"""
+
+        if not self.function:
+            raise ValueError("function is empty.")
+
+        task_key_ = f"{self.function.__name__}.{self.seq_id}"
+
+        if self.run_id:
+            task_key_ += "." + self.run_id
+
+        return task_key_
+
+    def asdict(self) -> dict:
+        """asdict"""
+
+        result = self.__dict__
+        if "parameters" in result:
+            result["parameters"] = dict(result["parameters"])
+
+        return result
+
+    def __repr__(self) -> str:
+        """__repr__"""
+
+        return str(self.asdict())
 
 
 class HenceConfig:
@@ -274,53 +321,6 @@ def task(title: str = None) -> Any:
     return _internal
 
 
-class FuncConfig:
-    """FuncConfig"""
-
-    def __init__(
-        self, fn: FunctionType, params: dict, rid: str = "", sid: str = ""
-    ) -> None:
-        """constructor"""
-
-        if not sid:
-            raise ValueError("Sequence id empty.")
-
-        _title = hence_config.context_get(CTX_TI_BASE, fn.__name__)
-
-        self.function: FunctionType = fn
-        self.parameters: immutabledict = immutabledict(params)
-        self.run_id: str = rid
-        self.seq_id: str = sid
-        self.title: str = _title if _title else fn.__name__
-        self.result: Any = None
-
-    @property
-    def task_key(self) -> str:
-        """Make a context key for functions"""
-
-        if not self.function:
-            raise ValueError("function is empty.")
-
-        task_key_ = f"{self.function.__name__}.{self.seq_id}"
-
-        if self.run_id:
-            task_key_ += "." + self.run_id
-
-        return task_key_
-
-    def asdict(self) -> dict:
-        """asdict"""
-
-        result = self.__dict__
-        if "parameters" in result:
-            result["parameters"] = dict(result["parameters"])
-
-        return result
-
-    def __repr__(self) -> str:
-        """__repr__"""
-
-        return str(self.asdict())
 
 
 def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
