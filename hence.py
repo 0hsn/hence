@@ -354,7 +354,7 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
                 f"Only function and parameters are allowed in `{run_tasks.__name__}`"
             )
 
-        fn_config = FuncConfig(sid=str(index), *fn_config_tpl)
+        fn_config = FuncConfig(sid=str(index), rid=run_id, *fn_config_tpl)
         hence_config.context_add(fn_config)
 
         fn_list.append(fn_config.task_key)
