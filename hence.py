@@ -6,7 +6,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from contextvars import ContextVar
 import enum
-from functools import wraps
+from functools import wraps, cached_property
+from itertools import zip_longest
 from json import loads, dumps
 import logging
 import sys
@@ -291,6 +292,22 @@ class WorkExecFrame:
         self.function_out = self.function(**params)
 
         return self.function_out
+
+
+def group(group_id: str) -> Any:
+    """Group"""
+
+    group_lst = hence_config.context_get(CTX_GR_BASE)
+
+    if group_id in group_lst:
+        raise ValueError(f"`{group_id}` exists already.")
+
+    def _internal(fn: FunctionType):
+        """Internal handler"""
+
+        hence_config.context_add(GroupConfig(title=group_id, function=fn))
+
+    return _internal
 
 
 def task(title: str = None) -> Any:
