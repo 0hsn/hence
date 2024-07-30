@@ -94,7 +94,14 @@ class HenceConfig:
         """Constructor"""
 
         self.enable_log: bool = False
-        self._logger_config()
+        self.context: ContextVar[dict] = None
+
+        self._setup_logger()
+        self._setup_context()
+
+    def _setup_context(self) -> None:
+        """Setup contextvar"""
+        del self.context
 
         self.context: ContextVar[dict] = ContextVar(
             CTX_NAME,
@@ -105,8 +112,8 @@ class HenceConfig:
             },
         )
 
-    def _logger_config(self):
-        """Loads or reloads HenceConfig"""
+    def _setup_logger(self) -> None:
+        """Loads or reloads logger"""
 
         stderr_log_formatter = logging.Formatter(
             "%(name)s :: %(levelname)s :: "
