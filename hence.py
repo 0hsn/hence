@@ -6,12 +6,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from contextvars import ContextVar
 import enum
-from functools import wraps
+from functools import wraps, cached_property
+from itertools import zip_longest
 from json import loads, dumps
 import logging
 import sys
 from types import FunctionType
-from typing import Any, Callable, Protocol, Union, final
+from typing import Any, Callable, NamedTuple, Protocol, Union, final
 
 from immutabledict import immutabledict
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
@@ -20,16 +21,99 @@ from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 CTX_NAME = "hence_context"
 CTX_FN_BASE = "func"
 CTX_TI_BASE = "title"
+CTX_GR_BASE = "group"
+
+
+class TitleConfig(NamedTuple):
+    """TitleConfig"""
+
+    task_key: str
+    title: str
+
+
+class GroupConfig(NamedTuple):
+    """GroupConfig"""
+
+    title: str
+    function: FunctionType
+
+
+class FuncConfig:
+    """FuncConfig"""
+
+    def __init__(
+        self, fn: FunctionType, params: dict, rid: str = "", sid: str = ""
+    ) -> None:
+        """constructor"""
+
+        if not sid:
+            raise ValueError("Sequence id empty.")
+
+        _title = hence_config.context_get(CTX_TI_BASE, fn.__name__)
+
+        self.function: FunctionType = fn
+        self.parameters: immutabledict = immutabledict(params)
+        self.run_id: str = rid
+        self.seq_id: str = sid
+        self.title: str = _title if _title else fn.__name__
+        self.result: Any = None
+
+    @cached_property
+    def task_key(self) -> str:
+        """Make a context key for functions"""
+
+        if not self.function:
+            raise ValueError("function is empty.")
+
+        task_key_ = f"{self.function.__name__}.{self.seq_id}"
+
+        if self.run_id:
+            task_key_ += "." + self.run_id
+
+        return task_key_
+
+    def asdict(self) -> dict:
+        """asdict"""
+
+        result = self.__dict__
+        if "parameters" in result:
+            result["parameters"] = dict(result["parameters"])
+
+        return result
+
+    def __repr__(self) -> str:
+        """__repr__"""
+
+        return str(self.asdict())
 
 
 class HenceConfig:
     """Hence configuration class"""
 
-    enable_log: bool = False
-    context: ContextVar[dict] = ContextVar(CTX_NAME, default={CTX_FN_BASE: {}})
+    def __init__(self) -> None:
+        """Constructor"""
 
-    def logger_config(self):
-        """loads or reloads HenceConfig"""
+        self.enable_log: bool = False
+        self.context: ContextVar[dict] = None
+
+        self._setup_logger()
+        self._setup_context()
+
+    def _setup_context(self) -> None:
+        """Setup contextvar"""
+        del self.context
+
+        self.context: ContextVar[dict] = ContextVar(
+            CTX_NAME,
+            default={
+                CTX_FN_BASE: {},
+                CTX_GR_BASE: {},
+                CTX_TI_BASE: {},
+            },
+        )
+
+    def _setup_logger(self) -> None:
+        """Loads or reloads logger"""
 
         stderr_log_formatter = logging.Formatter(
             "%(name)s :: %(levelname)s :: "
@@ -44,20 +128,32 @@ class HenceConfig:
         logger.addHandler(stdout_log_handler)
         logger.setLevel(logging.DEBUG)
 
-    def context_add(self, key: str, obj: FuncConfig) -> None:
+    def context_add(self, obj: FuncConfig | GroupConfig | TitleConfig) -> None:
         """Add to context"""
 
-        if not isinstance(obj, dict):
-            hence_log("error", "Only dict type supported for obj. found %s.", type(obj))
-            raise TypeError(f"Only dict type supported for obj. found {type(obj)}")
+        if not isinstance(obj, (FuncConfig, GroupConfig, TitleConfig)):
+            raise TypeError("context_add :: unsupported type")
 
-        context_val = self.context.get()
+        if isinstance(obj, FuncConfig):
+            context_val = self.context.get()
+            context_val[CTX_FN_BASE][obj.task_key] = obj
 
-        context_val[key] = context_val[key] | obj if key in context_val else obj
+        elif isinstance(obj, TitleConfig):
+            context_val = self.context.get()
+            context_val[CTX_TI_BASE][obj.task_key] = obj.title
+
+        elif isinstance(obj, GroupConfig):
+            context_val = self.context.get()
+
+            if obj.title not in context_val[CTX_GR_BASE]:
+                context_val[CTX_GR_BASE][obj.title] = [obj.function]
+            else:
+                context_val[CTX_GR_BASE][obj.title].append(obj.function)
+
         hence_log("debug", "Context:: %s.", self.context)
 
-    def context_search(self, key: str, obj_key: str) -> Any:
-        """Search in context"""
+    def context_get(self, key: str, obj_key: str = "") -> Any:
+        """Get from context"""
 
         context_val = self.context.get()
 
@@ -65,33 +161,28 @@ class HenceConfig:
             hence_log("error", "Object with key: `%s` not found.", key)
             raise KeyError(f"Object with key: `{key}` not found.")
 
-        if obj_key not in context_val[key]:
+        if obj_key and obj_key not in context_val[key]:
             hence_log("error", "Object with key: `%s` not found.", obj_key)
             raise KeyError(f"Object with key: `{obj_key}` not found.")
 
-        hence_log(
-            "debug",
-            "returning : `%s` for %s.%s .",
-            context_val[key][obj_key],
-            key,
-            obj_key,
-        )
+        ret_value = context_val[key][obj_key] if obj_key else context_val[key]
 
-        return context_val[key][obj_key]
+        hence_log("debug :: context_get ::", "`%s` for %s.%s.", ret_value, key, obj_key)
+
+        return ret_value
 
     def task(self, obj_key: str) -> FuncConfig:
         """Get a task by key"""
 
-        return self.context_search(CTX_FN_BASE, obj_key)
+        return self.context_get(CTX_FN_BASE, obj_key)
 
 
 logger = logging.getLogger("hence")
 
 hence_config = HenceConfig()
-hence_config.logger_config()
 
 
-def hence_log(level: str, message: str, *args: list) -> None:
+def hence_log(level: str, message: str, *args) -> None:
     """Final logging function"""
     if not hence_config.enable_log:
         return
@@ -210,6 +301,22 @@ class WorkExecFrame:
         return self.function_out
 
 
+def group(group_id: str) -> Any:
+    """Group"""
+
+    group_lst = hence_config.context_get(CTX_GR_BASE)
+
+    if group_id in group_lst:
+        raise ValueError(f"`{group_id}` exists already.")
+
+    def _internal(fn: FunctionType):
+        """Internal handler"""
+
+        hence_config.context_add(GroupConfig(title=group_id, function=fn))
+
+    return _internal
+
+
 def task(title: str = None) -> Any:
     """Task"""
 
@@ -220,7 +327,9 @@ def task(title: str = None) -> Any:
 
         # save function title to context
         hence_log("debug", "title `%s` registered.", t_title)
-        hence_config.context_add(CTX_TI_BASE, {function.__name__: t_title})
+
+        t_conf = TitleConfig(function.__name__, t_title)
+        hence_config.context_add(t_conf)
 
         if "kwargs" not in function.__code__.co_varnames:
             hence_log("error", "Missing `**kwargs` in %s args.", function.__name__)
@@ -238,58 +347,22 @@ def task(title: str = None) -> Any:
     return _internal
 
 
-class FuncConfig:
-    """FuncConfig"""
-
-    function: FunctionType
-    parameters: immutabledict
-    run_id: str = ""
-    title: str = ""
-    result: Any = None
-
-    def __init__(self, fn: FunctionType, params: dict, rid: str = "") -> None:
-        """constructor"""
-
-        self.function = fn
-        self.parameters = immutabledict(params)
-        self.run_id = rid
-        self.title = fn.__name__
-
-    @property
-    def task_key(self) -> str:
-        """Make a context key for functions"""
-
-        if not self.function:
-            raise ValueError("function is empty.")
-
-        task_key_ = self.function.__name__
-
-        if self.run_id:
-            task_key_ += "." + self.run_id
-
-        return task_key_
-
-    def asdict(self) -> dict:
-        """asdict"""
-
-        result = self.__dict__
-        if "parameters" in result:
-            result["parameters"] = dict(result["parameters"])
-
-        return result
-
-
-def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
+def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
     """Run @task"""
 
     fn_list = []
-    for fn_config_tpl in fn_config_list:
 
-        fn_config = FuncConfig(*fn_config_tpl)
-
+    for index, fn_config_tpl in enumerate(fn_config_list):
         hence_log("debug", "`run_tasks` :: %s", fn_config_tpl)
 
-        hence_config.context_add(CTX_FN_BASE, {fn_config.task_key: fn_config})
+        if len(fn_config_tpl) > 2:
+
+            raise ValueError(
+                f"Only function and parameters are allowed in `{run_tasks.__name__}`"
+            )
+
+        fn_config = FuncConfig(sid=str(index), rid=run_id, *fn_config_tpl)
+        hence_config.context_add(fn_config)
 
         fn_list.append(fn_config.task_key)
 
@@ -299,6 +372,25 @@ def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
 
     _dag = setup_dag(fn_list)
     return execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
+
+
+def run_group(group_id: str, task_params: list[dict]) -> Any:
+    """Run groups"""
+
+    groups = hence_config.context_get(CTX_GR_BASE)
+
+    if group_id not in groups:
+        raise RuntimeError(f"group `{group_id}` is not found.")
+
+    group_params = list(
+        zip_longest(
+            groups[group_id],
+            task_params,
+            fillvalue={},
+        )
+    )
+
+    return run_tasks(group_params, group_id)
 
 
 def setup_dag(vertices: list) -> DAG:
@@ -318,7 +410,7 @@ def execute_dag(
     dag: DAG,
     processor_: Union[SequentialProcessor, MultiThreadProcessor],
     executor_: ExecutorContract,
-) -> list[FunctionType]:
+) -> list:
     """Execute the dag"""
 
     if not isinstance(dag, DAG):
@@ -568,27 +660,26 @@ class FunctionTypeExecutor:
     def execute(self, task_key: str) -> Any:
         """Execute"""
 
-        fn_cfg: FuncConfig = hence_config.context_search(CTX_FN_BASE, task_key)
-        t_title: str = hence_config.context_search(
-            CTX_TI_BASE, fn_cfg.function.__name__
-        )
+        fn_cfg: FuncConfig = hence_config.context_get(CTX_FN_BASE, task_key)
+
+        t_title: str = fn_cfg.title
 
         # replace supported variables in title
         if "{" in t_title and "}" in t_title:
-            _task: FuncConfig = hence_config.task(task_key)
 
             try:
                 t_title = t_title.format(
-                    fn_key=_task.task_key,
-                    fn_name=_task.function.__name__,
-                    fn_run_id=_task.run_id,
+                    fn_key=fn_cfg.task_key,
+                    fn_name=fn_cfg.function.__name__,
+                    fn_run_id=fn_cfg.run_id,
+                    fn_seq_id=fn_cfg.seq_id,
                 )
             except KeyError as e:
                 hence_log("error", "`%s` not found in task.title.", str(e))
                 raise e
 
-            _task.title = t_title
-            hence_config.context_add(CTX_FN_BASE, {task_key: _task})
+            fn_cfg.title = t_title
+            hence_config.context_add(fn_cfg)
 
         hence_log("debug", "`%s::%s` is executing.", t_title, task_key)
 
@@ -599,8 +690,7 @@ class FunctionTypeExecutor:
 
         fn_key, fn_result = vertices_result[0]
 
-        fn_obj: FuncConfig = hence_config.context_search(CTX_FN_BASE, fn_key)
+        fn_obj: FuncConfig = hence_config.context_get(CTX_FN_BASE, fn_key)
         fn_obj.result = fn_result
 
-        hence_config.context_add(CTX_FN_BASE, {fn_key: fn_obj})
-        hence_log("debug", "Context.func: %s", hence_config.context.get())
+        hence_config.context_add(fn_obj)

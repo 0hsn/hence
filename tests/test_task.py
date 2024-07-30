@@ -1,6 +1,5 @@
 """Test @task()"""
 
-from icecream import ic
 from hence import hence_config, task, run_tasks, CTX_TI_BASE
 
 
@@ -44,7 +43,7 @@ class TestTaskDecorator:
 
         sample_task(tag="tag1")
 
-        task_obj = hence_config.context_search(CTX_TI_BASE, "sample_task")
+        task_obj = hence_config.context_get(CTX_TI_BASE, "sample_task")
 
         assert task_obj == "sample_task title"
 
@@ -53,7 +52,7 @@ class TestRunTask:
     """TestRunTask"""
 
     @staticmethod
-    def test_run_tasks_pass_without_tag():
+    def test_run_tasks_pass():
         """test run tasks pass"""
 
         @task(title="1")
@@ -64,37 +63,42 @@ class TestRunTask:
         def task_2(**kwargs):
             return task_2.__name__
 
-        run_tasks(
+        run_sequence = run_tasks(
             [
                 (task_1, {}),
                 (task_2, {}),
             ]
         )
 
-        assert task_1.__name__ == hence_config.task(task_1.__name__).title
-        assert task_2.__name__ == hence_config.task(task_2.__name__).title
+        for run_it in run_sequence:
+            fc = hence_config.task(run_it)
+            assert fc.function.__name__ == fc.result
 
     @staticmethod
-    def test_run_tasks_pass_with_tag():
-        """test run tasks pass"""
+    def test_run_tasks_pass_for_same_task():
+        """test run tasks pass for same task"""
 
-        @task(title="1")
+        @task(title="task one")
         def task_1(**kwargs):
-            return task_1.__name__
+            return_stmt = task_1.__name__
 
-        @task(title="2")
-        def task_2(**kwargs):
-            return task_2.__name__
+            if len(kwargs):
+                return_stmt += f' {kwargs["var1"]}, {kwargs["var2"]}'
 
-        run_tasks(
+            return return_stmt
+
+        run_sequence = run_tasks(
             [
-                (task_1, {}, "11111"),
-                (task_2, {}, "22222"),
+                (task_1, {}),
+                (task_1, {"var1": "Hello", "var2": "World"}),
             ]
         )
 
-        assert task_1.__name__ == hence_config.task(task_1.__name__ + ".11111").title
-        assert task_2.__name__ == hence_config.task(task_2.__name__ + ".22222").title
+        fc = hence_config.task(run_sequence[0])
+        assert fc.function.__name__ == fc.result
+
+        fc = hence_config.task(run_sequence[1])
+        assert "task_1 Hello, World" == fc.result
 
     @staticmethod
     def test_run_tasks_pass_with_replace_title():
@@ -108,15 +112,23 @@ class TestRunTask:
         def task_2(**kwargs):
             return task_2.__name__
 
-        run_tasks(
+        @task(title="task_3-{fn_seq_id}")
+        def task_3(**kwargs):
+            return task_2.__name__
+
+        run_sequence = run_tasks(
             [
-                (task_1, {}, "1"),
-                (task_2, {}, "2"),
+                (task_1, {}),
+                (task_2, {}),
+                (task_3, {}),
             ]
         )
 
-        assert (
-            f"{task_1.__name__}-{task_1.__name__}.1"
-            == hence_config.task(task_1.__name__ + ".1").title
-        )
-        assert f"{task_2.__name__}-2" == hence_config.task(task_2.__name__ + ".2").title
+        fc = hence_config.task(run_sequence[0])
+        assert "task_1-task_1.0" == fc.title
+
+        fc = hence_config.task(run_sequence[1])
+        assert "task_2-" == fc.title
+
+        fc = hence_config.task(run_sequence[2])
+        assert "task_3-2" == fc.title
