@@ -45,3 +45,37 @@ class TestGroup:
         hc._setup_context()
 
         assert ["a-group", "b-group"] == list(groups.keys())
+
+    @staticmethod
+    def test_group_pass():
+        """test group pass"""
+
+        GRP_NAME = "a-group"
+
+        ag = group(GRP_NAME)
+
+        @ag
+        @task()
+        def sample_task(**kwargs):
+            return kwargs
+
+        @ag
+        @task(title="SampleTask1")
+        def sample_task_1(**kwargs):
+            return kwargs
+
+        task_ids = run_group(
+            GRP_NAME,
+            [
+                {"a": 12},
+                {"b": 123},
+            ],
+        )
+
+        _task_d1 = hc.task(task_ids[0])
+        assert {"a": 12} == _task_d1.result
+
+        _task_d1 = hc.task(task_ids[1])
+        assert {"b": 123} == _task_d1.result
+
+        hc._setup_context()

@@ -369,6 +369,25 @@ def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
     return execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
 
 
+def run_group(group_id: str, task_params: list[dict]) -> Any:
+    """Run groups"""
+
+    groups = hence_config.context_get(CTX_GR_BASE)
+
+    if group_id not in groups:
+        raise RuntimeError(f"group `{group_id}` is not found.")
+
+    group_params = list(
+        zip_longest(
+            groups[group_id],
+            task_params,
+            fillvalue={},
+        )
+    )
+
+    return run_tasks(group_params, group_id)
+
+
 def setup_dag(vertices: list) -> DAG:
     """Setup DAG"""
 
