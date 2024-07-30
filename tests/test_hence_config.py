@@ -1,6 +1,5 @@
 """Hence config test"""
 
-import icecream
 import pytest
 
 import hence
