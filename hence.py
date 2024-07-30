@@ -340,9 +340,7 @@ def task(title: str = None) -> Any:
     return _internal
 
 
-
-
-def run_tasks(fn_config_list: list[tuple]) -> list[FunctionType]:
+def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
     """Run @task"""
 
     fn_list = []
@@ -405,7 +403,7 @@ def execute_dag(
     dag: DAG,
     processor_: Union[SequentialProcessor, MultiThreadProcessor],
     executor_: ExecutorContract,
-) -> list[FunctionType]:
+) -> list:
     """Execute the dag"""
 
     if not isinstance(dag, DAG):
