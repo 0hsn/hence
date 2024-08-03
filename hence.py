@@ -299,15 +299,15 @@ def setup_dag(vertices: list) -> DAG:
 
 def execute_dag(
     dag: DAG,
-    processor_: Union[SequentialProcessor, MultiThreadProcessor],
-    executor_: ExecutorContract,
+    ps: Union[SequentialProcessor, MultiThreadProcessor],
+    ex: ExecutorContract,
 ) -> list:
     """Execute the dag"""
 
     if not isinstance(dag, DAG):
         raise TypeError(f"Not a DAG. type: {type(dag)}")
 
-    return dag_run(dag, processor=processor_, executor=executor_)
+    return dag_run(dag, processor=ps, executor=ex)
 
 
 class ExecutorContract(Protocol):
