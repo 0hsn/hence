@@ -4,7 +4,7 @@ from hence import (
     CTX_FN_BASE,
     CTX_GR_BASE,
     CTX_TI_BASE,
-    FuncConfig,
+    TaskConfig,
     GroupConfig,
     HenceConfig,
     TitleConfig,
@@ -26,7 +26,7 @@ class TestHenceConfigContextAdd:
         def some_function(**kwargs):
             """some_function"""
 
-        fc = FuncConfig(some_function, {}, sid="1")
+        fc = TaskConfig(some_function, {}, sid="1")
 
         hc.context_add(fc)
         ctx_val = hc.context.get()

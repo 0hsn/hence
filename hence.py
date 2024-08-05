@@ -35,8 +35,8 @@ class GroupConfig(NamedTuple):
     function: FunctionType
 
 
-class FuncConfig:
-    """FuncConfig"""
+class TaskConfig:
+    """TaskConfig"""
 
     def __init__(
         self, fn: FunctionType, params: dict, rid: str = "", sid: str = ""
@@ -125,13 +125,13 @@ class HenceConfig:
         logger.addHandler(stdout_log_handler)
         logger.setLevel(logging.DEBUG)
 
-    def context_add(self, obj: FuncConfig | GroupConfig | TitleConfig) -> None:
+    def context_add(self, obj: TaskConfig | GroupConfig | TitleConfig) -> None:
         """Add to context"""
 
-        if not isinstance(obj, (FuncConfig, GroupConfig, TitleConfig)):
+        if not isinstance(obj, (TaskConfig, GroupConfig, TitleConfig)):
             raise TypeError("context_add :: unsupported type")
 
-        if isinstance(obj, FuncConfig):
+        if isinstance(obj, TaskConfig):
             context_val = self.context.get()
             context_val[CTX_FN_BASE][obj.task_key] = obj
 
@@ -168,7 +168,7 @@ class HenceConfig:
 
         return ret_value
 
-    def task(self, obj_key: str) -> FuncConfig:
+    def task(self, obj_key: str) -> TaskConfig:
         """Get a task by key"""
 
         return self.context_get(CTX_FN_BASE, obj_key)
@@ -252,7 +252,7 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
                 f"Only function and parameters are allowed in `{run_tasks.__name__}`"
             )
 
-        fn_config = FuncConfig(sid=str(index), rid=run_id, *fn_config_tpl)
+        fn_config = TaskConfig(sid=str(index), rid=run_id, *fn_config_tpl)
         hence_config.context_add(fn_config)
 
         fn_list.append(fn_config.task_key)
@@ -326,8 +326,6 @@ class ExecutorContract(Protocol):
 class FunctionTypeExecutor:
     """Linear executor"""
 
-    RES_KEY = "__works__"
-
     def __init__(self) -> None:
         """init FunctionTypeExecutor"""
 
@@ -341,7 +339,7 @@ class FunctionTypeExecutor:
     def execute(self, task_key: str) -> Any:
         """Execute"""
 
-        fn_cfg: FuncConfig = hence_config.context_get(CTX_FN_BASE, task_key)
+        fn_cfg: TaskConfig = hence_config.context_get(CTX_FN_BASE, task_key)
 
         t_title: str = fn_cfg.title
 
@@ -371,7 +369,7 @@ class FunctionTypeExecutor:
 
         fn_key, fn_result = vertices_result[0]
 
-        fn_obj: FuncConfig = hence_config.context_get(CTX_FN_BASE, fn_key)
+        fn_obj: TaskConfig = hence_config.context_get(CTX_FN_BASE, fn_key)
         fn_obj.result = fn_result
 
         hence_config.context_add(fn_obj)
