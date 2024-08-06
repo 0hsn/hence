@@ -85,15 +85,34 @@ class TaskConfig:
 
 
 class HenceConfig:
+def _setup_logger() -> logging.Logger:
+    """Loads or reloads logger"""
+
+    stderr_log_formatter = logging.Formatter(
+        "%(name)s :: %(levelname)s :: "
+        + "(P)%(process)d/(Th)%(thread)d :: "
+        + "%(message)s"
+    )
+
+    stdout_log_handler = logging.StreamHandler(stream=sys.stderr)
+    stdout_log_handler.setLevel(logging.NOTSET)
+    stdout_log_handler.setFormatter(stderr_log_formatter)
+
+    _logr = logging.getLogger("hence")
+
+    _logr.addHandler(stdout_log_handler)
+    _logr.setLevel(logging.DEBUG)
+
+    return _logr
+
+
     """Hence configuration class"""
 
     def __init__(self) -> None:
         """Constructor"""
 
-        self.enable_log: bool = False
         self.context: ContextVar[dict] = None
 
-        self._setup_logger()
         self._setup_context()
 
     def _setup_context(self) -> None:
@@ -108,22 +127,6 @@ class HenceConfig:
                 CTX_TI_BASE: {},
             },
         )
-
-    def _setup_logger(self) -> None:
-        """Loads or reloads logger"""
-
-        stderr_log_formatter = logging.Formatter(
-            "%(name)s :: %(levelname)s :: "
-            + "(P)%(process)d/(Th)%(thread)d :: "
-            + "%(message)s"
-        )
-
-        stdout_log_handler = logging.StreamHandler(stream=sys.stderr)
-        stdout_log_handler.setLevel(logging.NOTSET)
-        stdout_log_handler.setFormatter(stderr_log_formatter)
-
-        logger.addHandler(stdout_log_handler)
-        logger.setLevel(logging.DEBUG)
 
     def context_add(self, obj: TaskConfig | GroupConfig | TitleConfig) -> None:
         """Add to context"""
@@ -174,7 +177,7 @@ class HenceConfig:
         return self.context_get(CTX_FN_BASE, obj_key)
 
 
-logger = logging.getLogger("hence")
+_logger = _setup_logger()
 
 hence_config = HenceConfig()
 
@@ -189,7 +192,7 @@ def hence_log(level: str, message: str, *args) -> None:
 
     _log_level = logging.DEBUG if level == "debug" else logging.ERROR
 
-    logger.log(_log_level, message, *args)
+    _logger.log(_log_level, message, *args)
 
 
 def group(group_id: str) -> Any:
