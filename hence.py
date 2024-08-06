@@ -173,7 +173,7 @@ class HenceContext:
             else:
                 context_val[CTX_GR_BASE][obj.title].append(obj.function)
 
-        hence_log("debug", "Context:: %s.", self.context)
+        _logger.log(_logger.DEBUG, "Context:: %s.", self.context)
 
     def context_get(self, key: str, obj_key: str = "") -> Any:
         """Get from context"""
@@ -181,16 +181,18 @@ class HenceContext:
         context_val = self.context.get()
 
         if key not in context_val:
-            hence_log("error", "Object with key: `%s` not found.", key)
+            _logger.log(_logger.ERROR, "Object with key: `%s` not found.", key)
             raise KeyError(f"Object with key: `{key}` not found.")
 
         if obj_key and obj_key not in context_val[key]:
-            hence_log("error", "Object with key: `%s` not found.", obj_key)
+            _logger.log(_logger.ERROR, "Object with key: `%s` not found.", obj_key)
             raise KeyError(f"Object with key: `{obj_key}` not found.")
 
         ret_value = context_val[key][obj_key] if obj_key else context_val[key]
 
-        hence_log("debug :: context_get ::", "`%s` for %s.%s.", ret_value, key, obj_key)
+        _logger.log(
+            _logger.DEBUG, " :: context_get ::`%s` for %s.%s.", ret_value, key, obj_key
+        )
 
         return ret_value
 
@@ -200,8 +202,7 @@ class HenceContext:
         return self.context_get(CTX_FN_BASE, obj_key)
 
 
-_logger = _setup_logger()
-
+_logger = HenceLogger()
 
 hence_config = HenceContext()
 
@@ -231,20 +232,24 @@ def task(title: str = None) -> Any:
         t_title = title if title else function.__name__
 
         # save function title to context
-        hence_log("debug", "title `%s` registered.", t_title)
+        _logger.log(_logger.DEBUG, "title `%s` registered.", t_title)
 
         t_conf = TitleConfig(function.__name__, t_title)
         hence_config.context_add(t_conf)
 
         if "kwargs" not in function.__code__.co_varnames:
-            hence_log("error", "Missing `**kwargs` in %s args.", function.__name__)
+            _logger.log(
+                _logger.ERROR, "Missing `**kwargs` in %s args.", function.__name__
+            )
             raise TypeError(f"Missing `**kwargs` in {function.__name__} args.")
 
         @wraps(function)
         def _decorator(**kwargs: dict) -> Any:
             """decorator"""
 
-            hence_log("debug", "`%s` called with %s.", function.__name__, kwargs)
+            _logger.log(
+                _logger.DEBUG, "`%s` called with %s.", function.__name__, kwargs
+            )
             return function(**kwargs)
 
         return _decorator
@@ -258,7 +263,7 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
     fn_list = []
 
     for index, fn_config_tpl in enumerate(fn_config_list):
-        hence_log("debug", "`run_tasks` :: %s", fn_config_tpl)
+        _logger.log(_logger.DEBUG, "`run_tasks` :: %s", fn_config_tpl)
 
         if len(fn_config_tpl) > 2:
 
@@ -272,7 +277,7 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
         fn_list.append(fn_config.task_key)
 
     if not fn_list:
-        hence_log("error", "`fn_list` does not contain any `@task`.")
+        _logger.log(_logger.ERROR, "`fn_list` does not contain any `@task`.")
         raise TypeError("`fn_list` does not contain any `@task`.")
 
     _dag = setup_dag(fn_list)
@@ -368,13 +373,13 @@ class FunctionTypeExecutor:
                     fn_seq_id=fn_cfg.seq_id,
                 )
             except KeyError as e:
-                hence_log("error", "`%s` not found in task.title.", str(e))
+                _logger.log(_logger.ERROR, "`%s` not found in task.title.", str(e))
                 raise e
 
             fn_cfg.title = t_title
             hence_config.context_add(fn_cfg)
 
-        hence_log("debug", "`%s::%s` is executing.", t_title, task_key)
+        _logger.log(_logger.DEBUG, "`%s::%s` is executing.", t_title, task_key)
 
         return fn_cfg.function(**fn_cfg.parameters)
 
