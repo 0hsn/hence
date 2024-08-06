@@ -84,7 +84,6 @@ class TaskConfig:
         return str(self.asdict())
 
 
-class HenceConfig:
 def _setup_logger() -> logging.Logger:
     """Loads or reloads logger"""
 
@@ -106,6 +105,7 @@ def _setup_logger() -> logging.Logger:
     return _logr
 
 
+class HenceContext:
     """Hence configuration class"""
 
     def __init__(self) -> None:
@@ -193,6 +193,7 @@ def hence_log(level: str, message: str, *args) -> None:
     _log_level = logging.DEBUG if level == "debug" else logging.ERROR
 
     _logger.log(_log_level, message, *args)
+hence_config = HenceContext()
 
 
 def group(group_id: str) -> Any:
