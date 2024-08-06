@@ -202,20 +202,7 @@ class HenceContext:
 
 _logger = _setup_logger()
 
-hence_config = HenceConfig()
 
-
-def hence_log(level: str, message: str, *args) -> None:
-    """Final logging function"""
-    if not hence_config.enable_log:
-        return
-
-    if level not in ("debug", "error"):
-        raise SystemError("Invalid log type.")
-
-    _log_level = logging.DEBUG if level == "debug" else logging.ERROR
-
-    _logger.log(_log_level, message, *args)
 hence_config = HenceContext()
 
 
