@@ -84,25 +84,48 @@ class TaskConfig:
         return str(self.asdict())
 
 
-def _setup_logger() -> logging.Logger:
-    """Loads or reloads logger"""
+class HenceLogger:
+    """HenceLogger"""
 
-    stderr_log_formatter = logging.Formatter(
-        "%(name)s :: %(levelname)s :: "
-        + "(P)%(process)d/(Th)%(thread)d :: "
-        + "%(message)s"
-    )
+    DEBUG = "debug"
+    ERROR = "error"
 
-    stdout_log_handler = logging.StreamHandler(stream=sys.stderr)
-    stdout_log_handler.setLevel(logging.NOTSET)
-    stdout_log_handler.setFormatter(stderr_log_formatter)
+    def __init__(self):
+        """Loads or reloads logger"""
 
-    _logr = logging.getLogger("hence")
+        self.logger = logging.getLogger("hence")
+        self.enable_logging = False
 
-    _logr.addHandler(stdout_log_handler)
-    _logr.setLevel(logging.DEBUG)
+        self._setup_logger_()
 
-    return _logr
+    def _setup_logger_(self):
+        """setup logger"""
+
+        stderr_log_formatter = logging.Formatter(
+            "%(name)s :: %(levelname)s :: "
+            + "(P)%(process)d/(Th)%(thread)d :: "
+            + "%(message)s"
+        )
+
+        stdout_log_handler = logging.StreamHandler(stream=sys.stderr)
+        stdout_log_handler.setLevel(logging.NOTSET)
+        stdout_log_handler.setFormatter(stderr_log_formatter)
+
+        self.logger.addHandler(stdout_log_handler)
+        self.logger.setLevel(logging.DEBUG)
+
+    def log(self, level: str, message: str, *args) -> None:
+        """Final logging function"""
+
+        if not self.enable_logging:
+            return
+
+        if level not in (self.DEBUG, self.ERROR):
+            raise SystemError("Invalid log type.")
+
+        self.logger.log(
+            logging.DEBUG if level == _logger.DEBUG else logging.ERROR, message, *args
+        )
 
 
 class HenceContext:
