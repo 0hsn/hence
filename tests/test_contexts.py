@@ -7,21 +7,21 @@ from hence import (
     CTX_TI_BASE,
     GroupConfig,
     HenceContext,
-    RunLevelContext,
+    RunContext,
     TaskConfig,
     TitleConfig,
     task,
 )
 
 
-class TestRunLevelContext:
-    """TestRunLevelContext"""
+class TestRunContext:
+    """TestRunContext"""
 
     @staticmethod
     def test_setitem_fails_for_scaler():
         """test setitem fails for scaler"""
 
-        rc = RunLevelContext()
+        rc = RunContext()
 
         with pytest.raises(TypeError):
             rc["some_key"] = 1
@@ -30,7 +30,7 @@ class TestRunLevelContext:
     def test_setitem_fails_for_collection():
         """test setitem fails for collection"""
 
-        rc = RunLevelContext()
+        rc = RunContext()
 
         with pytest.raises(TypeError):
             rc["some_key"] = {"a": 1}
@@ -43,7 +43,7 @@ class TestRunLevelContext:
         def sample(**kwargs): ...
 
         try:
-            rc = RunLevelContext()
+            rc = RunContext()
             rc["some_key"] = TaskConfig(sample, {}, "0", "0")
         except TypeError as exc:
             assert False, f"'sum_x_y' raised an exception {exc}"
@@ -52,7 +52,7 @@ class TestRunLevelContext:
     def test_getitem_pass_returns_null():
         """test getitem pass returns null"""
 
-        rc = RunLevelContext()
+        rc = RunContext()
 
         assert rc["some_key"] is None
 
@@ -63,7 +63,7 @@ class TestRunLevelContext:
         @task(title="")
         def sample(**kwargs): ...
 
-        rc = RunLevelContext()
+        rc = RunContext()
         rc["some_key"] = TaskConfig(sample, {}, "0", "0")
 
         assert isinstance(rc["some_key"], TaskConfig)
@@ -77,7 +77,7 @@ class TestRunLevelContext:
 
         tc = TaskConfig(sample, {}, "0", "0")
 
-        rc = RunLevelContext()
+        rc = RunContext()
         rc[tc.task_key] = tc
 
         assert isinstance(rc.step(0), TaskConfig)
@@ -86,7 +86,7 @@ class TestRunLevelContext:
     def test_step_pass_returns_none():
         """test step pass returns none"""
 
-        rc = RunLevelContext()
+        rc = RunContext()
 
         assert rc.step(0) is None
 
@@ -99,7 +99,7 @@ class TestRunLevelContext:
 
         tc = TaskConfig(sample, {}, "0", "0")
 
-        rc = RunLevelContext()
+        rc = RunContext()
         rc[tc.task_key] = tc
 
         with pytest.raises(ValueError):
@@ -114,7 +114,7 @@ class TestRunLevelContext:
 
         tc = TaskConfig(sample, {}, "0", "0")
 
-        rc = RunLevelContext()
+        rc = RunContext()
         rc[tc.task_key] = tc
 
         del rc[tc.task_key]

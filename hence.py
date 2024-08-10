@@ -86,7 +86,7 @@ class TaskConfig:
         return str(self.asdict())
 
 
-class RunLevelContext(UserDict):
+class RunContext(UserDict):
     """Context data for Group and bloc of Task"""
 
     def __setitem__(self, key: str, item: TaskConfig) -> None:
