@@ -3,13 +3,14 @@ Hence
 """
 
 from __future__ import annotations
+from collections import UserDict
 from contextvars import ContextVar
 from functools import wraps, cached_property
 from itertools import zip_longest
 import logging
 import sys
 from types import FunctionType
-from typing import Any, NamedTuple, Protocol, Union
+from typing import Any, NamedTuple, Optional, Protocol, Union
 
 from immutabledict import immutabledict
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
@@ -82,6 +83,35 @@ class TaskConfig:
         """__repr__"""
 
         return str(self.asdict())
+
+
+class RunLevelContext(UserDict):
+    """Context data for Group and bloc of Task"""
+
+    def __setitem__(self, key: str, item: TaskConfig) -> None:
+        """Add a TaskConfig to data"""
+
+        if not isinstance(item, TaskConfig):
+            raise TypeError("A TaskConfig for given.")
+
+        if key in self.data:
+            raise ValueError("TaskConfig exists.")
+
+        super().__setitem__(key, item)
+
+    def __getitem__(self, key: str) -> Optional[TaskConfig]:
+        """Get a TaskConfig"""
+
+        return self.data[key] if key in self.data else None
+
+    def step(self, step: int) -> Optional[TaskConfig]:
+        """Get specific step"""
+
+        for key_ in self.data.keys():
+            if f"{step}." in key_:
+                return self.data[key_]
+
+        return None
 
 
 class HenceLogger:
