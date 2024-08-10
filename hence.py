@@ -64,7 +64,7 @@ class TaskConfig:
         if not self.function:
             raise ValueError("function is empty.")
 
-        task_key_ = f"{self.function.__name__}.{self.seq_id}"
+        task_key_ = f"{self.seq_id}"
 
         if self.run_id:
             task_key_ += "." + self.run_id

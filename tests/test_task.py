@@ -125,7 +125,7 @@ class TestRunTask:
         )
 
         fc = hence_config.task(run_sequence[0])
-        assert "task_1-task_1.0" == fc.title
+        assert "task_1-0" == fc.title
 
         fc = hence_config.task(run_sequence[1])
         assert "task_2-" == fc.title

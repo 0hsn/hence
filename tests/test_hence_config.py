@@ -21,7 +21,7 @@ class TestHenceConfig:
         ctx = hence.hence_config.context.get()
 
         assert hence.CTX_FN_BASE in ctx
-        assert "one_task.1" in ctx[hence.CTX_FN_BASE]
+        assert "1" in ctx[hence.CTX_FN_BASE]
 
     @staticmethod
     def test_context_add_fail():
