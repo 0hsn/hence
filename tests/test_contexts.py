@@ -1,7 +1,6 @@
 """Tests for Context"""
 
 import pytest
-import icecream
 from hence import RunLevelContext, TaskConfig, task
 
 
@@ -80,3 +79,37 @@ class TestRunLevelContext:
         rc = RunLevelContext()
 
         assert rc.step(0) is None
+
+    @staticmethod
+    def test_step_fails_when_assigned_same_index():
+        """test step fails when assigned same index"""
+
+        @task(title="")
+        def sample(**kwargs): ...
+
+        tc = TaskConfig(sample, {}, "0", "0")
+
+        rc = RunLevelContext()
+        rc[tc.task_key] = tc
+
+        with pytest.raises(ValueError):
+            rc[tc.task_key] = tc
+
+    @staticmethod
+    def test_step_passes_when_key_del():
+        """test step passes when key del"""
+
+        @task(title="")
+        def sample(**kwargs): ...
+
+        tc = TaskConfig(sample, {}, "0", "0")
+
+        rc = RunLevelContext()
+        rc[tc.task_key] = tc
+
+        del rc[tc.task_key]
+
+        try:
+            rc[tc.task_key] = tc
+        except ValueError as exc:
+            assert False, f"'sum_x_y' raised an exception {exc}"
