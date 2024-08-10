@@ -18,8 +18,9 @@ from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
 CTX_NAME = "hence_context"
 CTX_FN_BASE = "func"
-CTX_TI_BASE = "title"
 CTX_GR_BASE = "group"
+CTX_RL_BASE = "runs"
+CTX_TI_BASE = "title"
 
 
 class TitleConfig(NamedTuple):
@@ -177,11 +178,17 @@ class HenceContext:
             default={
                 CTX_FN_BASE: {},
                 CTX_GR_BASE: {},
+                CTX_RL_BASE: {},
                 CTX_TI_BASE: {},
             },
         )
 
-    def context_add(self, obj: TaskConfig | GroupConfig | TitleConfig) -> None:
+    def context_add(
+        self,
+        obj: TaskConfig | GroupConfig | TitleConfig | RunLevelContext,
+        /,
+        **kwargs: Any,
+    ) -> None:
         """Add to context"""
 
         if not isinstance(obj, (TaskConfig, GroupConfig, TitleConfig)):
@@ -202,6 +209,12 @@ class HenceContext:
                 context_val[CTX_GR_BASE][obj.title] = [obj.function]
             else:
                 context_val[CTX_GR_BASE][obj.title].append(obj.function)
+
+        elif isinstance(obj, RunLevelContext):
+            if "rlc_id" in kwargs:
+                context_val[CTX_GR_BASE][kwargs["rlc_id"]] = obj
+            else:
+                raise ValueError("`rlc_id` not found.")
 
         _logger.log(_logger.DEBUG, "Context:: %s.", self.context)
 
