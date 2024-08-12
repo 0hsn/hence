@@ -10,7 +10,7 @@ from itertools import zip_longest
 import logging
 import sys
 from types import FunctionType
-from typing import Any, NamedTuple, Optional, Protocol, Union
+from typing import Any, NamedTuple, Protocol, Union
 import uuid
 
 from immutabledict import immutabledict
@@ -149,11 +149,11 @@ class RunContextSupport:
         _context.context_add(r_ctx, run_context_id=run_context_id)
 
 
-class TaskUtil:
-    """TaskUtil to get state data"""
+class Utils:
+    """Utils to get state data"""
 
     def __init__(self, /, run_context_id: str = "") -> None:
-        """TaskUtil init"""
+        """Utils init"""
 
         self.run_context_id = run_context_id
 
@@ -163,7 +163,7 @@ class TaskUtil:
         return TaskConfig.from_task_key(f"{seq_id}.{self.run_context_id}")
 
     @staticmethod
-    def with_task_key(task_key: str) -> TaskConfig:
+    def get_task_config(task_key: str) -> TaskConfig:
         """Get a task by task_key"""
 
         return TaskConfig.from_task_key(task_key)

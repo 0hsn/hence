@@ -1,7 +1,9 @@
 """Test module for group()"""
 
 import pytest
-from hence import TaskUtil, group, task, run_group, _context as hc, CTX_GR_BASE
+import icecream
+
+from hence import Utils, group, task, run_group, _context as hc, CTX_GR_BASE
 
 
 class TestGroup:
@@ -72,10 +74,10 @@ class TestGroup:
             ],
         )
 
-        _task_d1 = TaskUtil.with_task_key(task_ids[0])
+        _task_d1 = Utils.get_task_config(task_ids[0])
         assert {"a": 12} == _task_d1.result
 
-        _task_d1 = TaskUtil.with_task_key(task_ids[1])
+        _task_d1 = Utils.get_task_config(task_ids[1])
         assert {"b": 123} == _task_d1.result
 
         hc._setup_context()
@@ -105,11 +107,11 @@ class TestGroup:
             ],
         )
 
-        # _task_d1 = TaskUtil.with_task_key(task_ids[0])
-        # assert {"a": 12} == _task_d1.result
+        _task_d1 = Utils.get_task_config(task_ids[0])
+        assert {"a": 12} == _task_d1.result
 
-        # _task_d1 = TaskUtil.with_task_key(task_ids[1])
-        # assert {"b": 123} == _task_d1.result
+        _task_d1 = Utils.get_task_config(task_ids[1])
+        assert {"b": 123} == _task_d1.result
 
         GRP_NAME_B = "b-group"
         bg = group(GRP_NAME_B)
@@ -131,5 +133,11 @@ class TestGroup:
                 {"b": 123},
             ],
         )
+
+        _task_d1 = Utils.get_task_config(task_ids[0])
+        assert {"a": 12} == _task_d1.result
+
+        _task_d1 = Utils.get_task_config(task_ids[1])
+        assert {"b": 123} == _task_d1.result
 
         hc._setup_context()

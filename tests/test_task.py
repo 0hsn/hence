@@ -1,6 +1,8 @@
 """Test @task()"""
 
-from hence import TaskUtil, _context, task, run_tasks, CTX_TI_BASE
+import icecream
+
+from hence import TaskConfig, Utils, _context, task, run_tasks, CTX_TI_BASE
 
 
 class TestTaskDecorator:
@@ -71,7 +73,7 @@ class TestRunTask:
         )
 
         for run_it in run_sequence:
-            fc = TaskUtil.with_task_key(run_it)
+            fc = Utils.get_task_config(run_it)
             assert fc.function.__name__ == fc.result
 
     @staticmethod
@@ -94,10 +96,10 @@ class TestRunTask:
             ]
         )
 
-        fc = TaskUtil.with_task_key(run_sequence[0])
+        fc = Utils.get_task_config(run_sequence[0])
         assert fc.function.__name__ == fc.result
 
-        fc = TaskUtil.with_task_key(run_sequence[1])
+        fc = Utils.get_task_config(run_sequence[1])
         assert "task_1 Hello, World" == fc.result
 
     @staticmethod
@@ -124,15 +126,15 @@ class TestRunTask:
             ]
         )
 
-        fc = TaskUtil.with_task_key(run_sequence[0])
+        fc = Utils.get_task_config(run_sequence[0])
         assert f"task_1-{run_sequence[0]}" == fc.title
 
         _, run_id = run_sequence[1].split(".", 1)
-        fc = TaskUtil.with_task_key(run_sequence[1])
+        fc = Utils.get_task_config(run_sequence[1])
         assert f"task_2-{run_id}" == fc.title
 
         seq_id, _ = run_sequence[2].split(".", 1)
-        fc = TaskUtil.with_task_key(run_sequence[2])
+        fc = Utils.get_task_config(run_sequence[2])
         assert f"task_3-{seq_id}" == fc.title
 
     @staticmethod
@@ -159,15 +161,15 @@ class TestRunTask:
             ],
         )
 
-        fc = TaskUtil.with_task_key(run_sequence[0])
+        fc = Utils.get_task_config(run_sequence[0])
         assert f"task_1-{run_sequence[0]}" == fc.title
 
         _, run_id = run_sequence[1].split(".", 1)
-        fc = TaskUtil.with_task_key(run_sequence[1])
+        fc = Utils.get_task_config(run_sequence[1])
         assert f"task_2-{run_id}" == fc.title
 
         seq_id, _ = run_sequence[2].split(".", 1)
-        fc = TaskUtil.with_task_key(run_sequence[2])
+        fc = Utils.get_task_config(run_sequence[2])
         assert f"task_3-{seq_id}" == fc.title
 
         @task(title="task_4-{fn_task_key}")
@@ -190,13 +192,13 @@ class TestRunTask:
             ]
         )
 
-        fc = TaskUtil.with_task_key(run_sequence[0])
+        fc = Utils.get_task_config(run_sequence[0])
         assert f"task_4-{run_sequence[0]}" == fc.title
 
         _, run_id = run_sequence[1].split(".", 1)
-        fc = TaskUtil.with_task_key(run_sequence[1])
+        fc = Utils.get_task_config(run_sequence[1])
         assert f"task_5-{run_id}" == fc.title
 
         seq_id, _ = run_sequence[2].split(".", 1)
-        fc = TaskUtil.with_task_key(run_sequence[2])
+        fc = Utils.get_task_config(run_sequence[2])
         assert f"task_6-{seq_id}" == fc.title
