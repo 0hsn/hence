@@ -366,6 +366,10 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
     """Run @task"""
 
     fn_list = []
+    rl_context = RunContext()
+
+    if len(run_id) == 0:
+        run_id = str(uuid.uuid4())
 
     for index, fn_config_tpl in enumerate(fn_config_list):
         _logger.log(_logger.DEBUG, "`run_tasks` :: %s", fn_config_tpl)
@@ -377,7 +381,9 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
             )
 
         fn_config = TaskConfig(sid=str(index), rid=run_id, *fn_config_tpl)
-        hence_config.context_add(fn_config)
+
+        rl_context[fn_config.task_key] = fn_config
+        _context.context_add(rl_context, run_context_id=run_id)
 
         fn_list.append(fn_config.task_key)
 
