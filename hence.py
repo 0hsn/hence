@@ -124,15 +124,7 @@ class RunContext(UserDict):
         if not isinstance(item, TaskConfig):
             raise TypeError("A TaskConfig for given.")
 
-        if key in self.data:
-            raise ValueError("TaskConfig exists.")
-
         super().__setitem__(key, item)
-
-    def __getitem__(self, key: str) -> Optional[TaskConfig]:
-        """Get a TaskConfig"""
-
-        return self.data[key] if key in self.data else None
 
     def step(self, step: int) -> Optional[TaskConfig]:
         """Get specific step"""
