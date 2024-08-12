@@ -343,8 +343,9 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
         _logger.log(_logger.ERROR, "`fn_list` does not contain any `@task`.")
         raise TypeError("`fn_list` does not contain any `@task`.")
 
-    _dag = setup_dag(fn_list)
-    return execute_dag(_dag, SequentialProcessor(), FunctionTypeExecutor())
+    return execute_dag(
+        setup_dag(fn_list), SequentialProcessor(), FunctionTypeExecutor()
+    )
 
 
 def run_group(group_id: str, task_params: list[dict]) -> Any:
