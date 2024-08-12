@@ -154,6 +154,28 @@ class RunContextSupport:
         """Save to context"""
 
         _context.context_add(r_ctx, run_context_id=run_context_id)
+
+
+class TaskUtil:
+    """TaskUtil to get state data"""
+
+    def __init__(self, /, run_context_id: str = "") -> None:
+        """TaskUtil init"""
+
+        self.run_context_id = run_context_id
+
+    def with_seq(self, /, seq_id: int) -> TaskConfig:
+        """Get a task by seq_id"""
+
+        return TaskConfig.from_task_key(f"{seq_id}.{self.run_context_id}")
+
+    @staticmethod
+    def with_task_key(task_key: str) -> TaskConfig:
+        """Get a task by task_key"""
+
+        return TaskConfig.from_task_key(task_key)
+
+
 class HenceLogger:
     """HenceLogger"""
 
