@@ -434,14 +434,18 @@ class FunctionTypeExecutor:
             _logger.DEBUG, "`%s::%s` is executing.", task_cfg.title, task_cfg.task_key
         )
 
-        return fn_cfg.function(**fn_cfg.parameters)
+        return task_cfg.function(**task_cfg.parameters)
 
     def report_finish(self, vertices_result: list):
-        """After execution finished"""
+        """deliver stores results"""
 
-        fn_key, fn_result = vertices_result[0]
+        task_key, result = vertices_result[0]
+        _, run_context_id = task_key.split(".", 1)
 
-        fn_obj: TaskConfig = hence_config.context_get(CTX_FN_BASE, fn_key)
-        fn_obj.result = fn_result
+        rlc: RunContext = RunContextSupport.from_context(run_context_id)
+        task_cfg: TaskConfig = rlc[task_key]
 
-        hence_config.context_add(fn_obj)
+        task_cfg.result = result
+
+        rlc[task_cfg.task_key] = task_cfg
+        RunContextSupport.to_context(rlc, run_context_id)
