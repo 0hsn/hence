@@ -106,6 +106,15 @@ class TaskConfig:
             return True
         return False
 
+    @staticmethod
+    def from_task_key(t_key: str) -> "TaskConfig":
+        """Create a TaskConfig from task_key"""
+        _, run_context_id = t_key.split(".", 1)
+
+        rlc: RunContext = RunContextSupport.from_context(run_context_id)
+        return rlc[t_key]
+
+
 class RunContext(UserDict):
     """Context data for Group and bloc of Task"""
 
