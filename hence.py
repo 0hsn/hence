@@ -11,6 +11,7 @@ import logging
 import sys
 from types import FunctionType
 from typing import Any, NamedTuple, Optional, Protocol, Union
+import uuid
 
 from immutabledict import immutabledict
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
@@ -247,13 +248,21 @@ class HenceContext:
 
     def context_add(
         self,
-        obj: TaskConfig | GroupConfig | TitleConfig | RunLevelContext,
+        obj: TaskConfig | GroupConfig | TitleConfig | RunContext,
         /,
         **kwargs: Any,
     ) -> None:
         """Add to context"""
 
-        if not isinstance(obj, (TaskConfig, GroupConfig, TitleConfig)):
+        if not isinstance(
+            obj,
+            (
+                TaskConfig,
+                GroupConfig,
+                TitleConfig,
+                RunContext,
+            ),
+        ):
             raise TypeError("context_add :: unsupported type")
 
         if isinstance(obj, TaskConfig):
@@ -272,11 +281,13 @@ class HenceContext:
             else:
                 context_val[CTX_GR_BASE][obj.title].append(obj.function)
 
-        elif isinstance(obj, RunLevelContext):
-            if "rlc_id" in kwargs:
-                context_val[CTX_GR_BASE][kwargs["rlc_id"]] = obj
+        elif isinstance(obj, RunContext):
+            context_val = self.context.get()
+
+            if "run_context_id" in kwargs:
+                context_val[CTX_RL_BASE][kwargs["run_context_id"]] = obj
             else:
-                raise ValueError("`rlc_id` not found.")
+                raise ValueError("`run_context_id` not found.")
 
         _logger.log(_logger.DEBUG, "Context:: %s.", self.context)
 
