@@ -10,6 +10,7 @@ from hence import (
     RunContext,
     TaskConfig,
     TitleConfig,
+    _context,
     task,
 )
 
@@ -49,7 +50,7 @@ class TestRunContext:
             assert False, f"'sum_x_y' raised an exception {exc}"
 
     @staticmethod
-    def test_getitem_pass_returns_null():
+    def test_getitem_fails_with_keyerror():
         """test getitem pass returns null"""
 
         rc = RunContext()
@@ -70,16 +71,32 @@ class TestRunContext:
         assert isinstance(rc["some_key"], TaskConfig)
 
 
+class TestHenceContext:
+    """TestHenceContext"""
 
     @staticmethod
+    def test_context_add_pass():
+        """test_context_add_pass"""
 
+        @task()
+        def one_task(**kwargs): ...
 
+        _fc = TaskConfig(one_task, {}, sid="1")
 
+        _context.context_add(_fc)
+        ctx = _context.context.get()
 
+        assert CTX_FN_BASE in ctx
+        assert "1" in ctx[CTX_FN_BASE]
 
     @staticmethod
+    def test_context_add_fail():
+        """test_context_add_fail"""
 
+        with pytest.raises(TypeError) as te:
+            _context.context_add([1, 2, 3])
 
+        assert te.match("context_add :: unsupported type")
 
 
 class TestHenceContextContextAdd:
