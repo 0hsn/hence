@@ -135,6 +135,25 @@ class RunContext(UserDict):
         return None
 
 
+class RunContextSupport:
+    """RunContext Support"""
+
+    @staticmethod
+    def from_context(run_context_id: str) -> "RunContext":
+        """Create from context"""
+
+        r_ctx = _context.context_get(CTX_RL_BASE, run_context_id)
+
+        if not isinstance(r_ctx, RunContext):
+            raise ValueError(f"RunContext not found for: `{run_context_id}`")
+
+        return r_ctx
+
+    @staticmethod
+    def to_context(r_ctx: RunContext, run_context_id: str) -> None:
+        """Save to context"""
+
+        _context.context_add(r_ctx, run_context_id=run_context_id)
 class HenceLogger:
     """HenceLogger"""
 
