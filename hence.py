@@ -408,11 +408,6 @@ class ExecutorContract(Protocol):
 class FunctionTypeExecutor:
     """Linear executor"""
 
-    def __init__(self) -> None:
-        """init FunctionTypeExecutor"""
-
-        self._results = {}
-
     def param(self, vertex: Any) -> Any:
         """Selecting parameters"""
 
