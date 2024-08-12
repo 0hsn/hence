@@ -1,7 +1,6 @@
 """Test module for group()"""
 
 import pytest
-import icecream
 
 from hence import Utils, group, task, run_group, _context as hc, CTX_GR_BASE
 

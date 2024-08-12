@@ -2,7 +2,6 @@
 
 import pytest
 from hence import (
-    CTX_FN_BASE,
     CTX_GR_BASE,
     CTX_TI_BASE,
     GroupConfig,
