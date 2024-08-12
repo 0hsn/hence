@@ -312,11 +312,6 @@ class HenceContext:
 
         return ret_value
 
-    def task(self, obj_key: str) -> TaskConfig:
-        """Get a task by key"""
-
-        return self.context_get(CTX_FN_BASE, obj_key)
-
 
 _logger = HenceLogger()
 
