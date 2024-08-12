@@ -421,11 +421,18 @@ class FunctionTypeExecutor:
     def execute(self, task_key: str) -> Any:
         """Execute"""
 
-        fn_cfg: TaskConfig = hence_config.context_get(CTX_FN_BASE, task_key)
+        _, run_context_id = task_key.split(".", 1)
 
+        rlc: RunContext = RunContextSupport.from_context(run_context_id)
+        task_cfg: TaskConfig = rlc[task_key]
 
         if task_cfg.format_title():
+            rlc[task_cfg.task_key] = task_cfg
+            RunContextSupport.to_context(rlc, run_context_id)
 
+        _logger.log(
+            _logger.DEBUG, "`%s::%s` is executing.", task_cfg.title, task_cfg.task_key
+        )
 
         return fn_cfg.function(**fn_cfg.parameters)
 
