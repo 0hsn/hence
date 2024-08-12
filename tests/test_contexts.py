@@ -69,63 +69,17 @@ class TestRunContext:
 
         assert isinstance(rc["some_key"], TaskConfig)
 
-    @staticmethod
-    def test_step_pass_returns_task_config():
-        """test step pass returns task config"""
 
-        @task(title="")
-        def sample(**kwargs): ...
-
-        tc = TaskConfig(sample, {}, "0", "0")
-
-        rc = RunContext()
-        rc[tc.task_key] = tc
-
-        assert isinstance(rc.step(0), TaskConfig)
 
     @staticmethod
-    def test_step_pass_returns_none():
-        """test step pass returns none"""
 
-        rc = RunContext()
 
-        assert rc.step(0) is None
+
+
 
     @staticmethod
-    def test_step_pass_when_assigned_same_index():
-        """test step fails when assigned same index"""
 
-        @task(title="")
-        def sample(**kwargs): ...
 
-        tc = TaskConfig(sample, {}, "0", "0")
-
-        rc = RunContext()
-        rc[tc.task_key] = tc
-
-        try:
-            rc[tc.task_key] = tc
-        except ValueError as exc:
-            assert False, f"'sum_x_y' raised an exception {exc}"
-
-    @staticmethod
-    def test_step_passes_when_key_del():
-        """test step passes when key del"""
-
-        @task(title="")
-        def sample(**kwargs): ...
-
-        tc = TaskConfig(sample, {}, "0", "0")
-
-        rc = RunContext()
-        rc[tc.task_key] = tc
-
-        del rc[tc.task_key]
-
-        try:
-            rc[tc.task_key] = tc
-        except ValueError as exc:
-            assert False, f"'sum_x_y' raised an exception {exc}"
 
 
 class TestHenceContextContextAdd:

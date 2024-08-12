@@ -127,15 +127,6 @@ class RunContext(UserDict):
 
         super().__setitem__(key, item)
 
-    def step(self, step: int) -> Optional[TaskConfig]:
-        """Get specific step"""
-
-        for key_ in self.data.keys():
-            if f"{step}." in key_:
-                return self.data[key_]
-
-        return None
-
 
 class RunContextSupport:
     """RunContext Support"""
