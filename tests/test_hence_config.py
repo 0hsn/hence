@@ -17,8 +17,8 @@ class TestHenceConfig:
 
         _fc = hence.TaskConfig(one_task, {}, sid="1")
 
-        hence.hence_config.context_add(_fc)
-        ctx = hence.hence_config.context.get()
+        hence._context.context_add(_fc)
+        ctx = hence._context.context.get()
 
         assert hence.CTX_FN_BASE in ctx
         assert "1" in ctx[hence.CTX_FN_BASE]
@@ -28,6 +28,6 @@ class TestHenceConfig:
         """test_context_add_fail"""
 
         with pytest.raises(TypeError) as te:
-            hence.hence_config.context_add([1, 2, 3])
+            hence._context.context_add([1, 2, 3])
 
         assert te.match("context_add :: unsupported type")

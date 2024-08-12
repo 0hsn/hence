@@ -48,7 +48,7 @@ class TaskConfig:
         if not sid:
             raise ValueError("Sequence id empty.")
 
-        _title = hence_config.context_get(CTX_TI_BASE, fn.__name__)
+        _title = _context.context_get(CTX_TI_BASE, fn.__name__)
 
         self.function: FunctionType = fn
         self.parameters: immutabledict = immutabledict(params)
@@ -247,13 +247,13 @@ class HenceContext:
 
 _logger = HenceLogger()
 
-hence_config = HenceContext()
+_context = HenceContext()
 
 
 def group(group_id: str) -> Any:
     """Group"""
 
-    group_lst = hence_config.context_get(CTX_GR_BASE)
+    group_lst = _context.context_get(CTX_GR_BASE)
 
     if group_id in group_lst:
         raise ValueError(f"`{group_id}` exists already.")
@@ -261,7 +261,7 @@ def group(group_id: str) -> Any:
     def _internal(fn: FunctionType):
         """Internal handler"""
 
-        hence_config.context_add(GroupConfig(title=group_id, function=fn))
+        _context.context_add(GroupConfig(title=group_id, function=fn))
 
     return _internal
 
@@ -278,7 +278,7 @@ def task(title: str = None) -> Any:
         _logger.log(_logger.DEBUG, "title `%s` registered.", t_title)
 
         t_conf = TitleConfig(function.__name__, t_title)
-        hence_config.context_add(t_conf)
+        _context.context_add(t_conf)
 
         if "kwargs" not in function.__code__.co_varnames:
             _logger.log(
@@ -330,7 +330,7 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
 def run_group(group_id: str, task_params: list[dict]) -> Any:
     """Run groups"""
 
-    groups = hence_config.context_get(CTX_GR_BASE)
+    groups = _context.context_get(CTX_GR_BASE)
 
     if group_id not in groups:
         raise RuntimeError(f"group `{group_id}` is not found.")

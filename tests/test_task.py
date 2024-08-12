@@ -1,6 +1,6 @@
 """Test @task()"""
 
-from hence import hence_config, task, run_tasks, CTX_TI_BASE
+from hence import TaskUtil, _context, task, run_tasks, CTX_TI_BASE
 
 
 class TestTaskDecorator:
@@ -43,7 +43,7 @@ class TestTaskDecorator:
 
         sample_task(tag="tag1")
 
-        task_obj = hence_config.context_get(CTX_TI_BASE, "sample_task")
+        task_obj = _context.context_get(CTX_TI_BASE, "sample_task")
 
         assert task_obj == "sample_task title"
 
@@ -71,7 +71,7 @@ class TestRunTask:
         )
 
         for run_it in run_sequence:
-            fc = hence_config.task(run_it)
+            fc = TaskUtil.with_task_key(run_it)
             assert fc.function.__name__ == fc.result
 
     @staticmethod
@@ -94,10 +94,10 @@ class TestRunTask:
             ]
         )
 
-        fc = hence_config.task(run_sequence[0])
+        fc = TaskUtil.with_task_key(run_sequence[0])
         assert fc.function.__name__ == fc.result
 
-        fc = hence_config.task(run_sequence[1])
+        fc = TaskUtil.with_task_key(run_sequence[1])
         assert "task_1 Hello, World" == fc.result
 
     @staticmethod

@@ -1,7 +1,7 @@
 """Test module for group()"""
 
 import pytest
-from hence import group, task, run_group, hence_config as hc, CTX_GR_BASE
+from hence import TaskUtil, group, task, run_group, _context as hc, CTX_GR_BASE
 
 
 class TestGroup:
