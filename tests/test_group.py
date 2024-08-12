@@ -72,10 +72,64 @@ class TestGroup:
             ],
         )
 
-        _task_d1 = hc.task(task_ids[0])
+        _task_d1 = TaskUtil.with_task_key(task_ids[0])
         assert {"a": 12} == _task_d1.result
 
-        _task_d1 = hc.task(task_ids[1])
+        _task_d1 = TaskUtil.with_task_key(task_ids[1])
         assert {"b": 123} == _task_d1.result
+
+        hc._setup_context()
+
+    @staticmethod
+    def test_group_pass_when_overlapping_group():
+        """test group pass when overlapping group"""
+
+        GRP_NAME_A = "a-group"
+        ag = group(GRP_NAME_A)
+
+        @ag
+        @task()
+        def sample_task(**kwargs):
+            return kwargs
+
+        @ag
+        @task(title="SampleTask1")
+        def sample_task_1(**kwargs):
+            return kwargs
+
+        task_ids = run_group(
+            GRP_NAME_A,
+            [
+                {"a": 12},
+                {"b": 123},
+            ],
+        )
+
+        # _task_d1 = TaskUtil.with_task_key(task_ids[0])
+        # assert {"a": 12} == _task_d1.result
+
+        # _task_d1 = TaskUtil.with_task_key(task_ids[1])
+        # assert {"b": 123} == _task_d1.result
+
+        GRP_NAME_B = "b-group"
+        bg = group(GRP_NAME_B)
+
+        @bg
+        @task()
+        def sample_task_b(**kwargs):
+            return kwargs
+
+        @bg
+        @task(title="SampleTask1")
+        def sample_task_b_1(**kwargs):
+            return kwargs
+
+        task_ids = run_group(
+            GRP_NAME_B,
+            [
+                {"a": 12},
+                {"b": 123},
+            ],
+        )
 
         hc._setup_context()

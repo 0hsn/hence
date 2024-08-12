@@ -54,7 +54,8 @@ class TestRunContext:
 
         rc = RunContext()
 
-        assert rc["some_key"] is None
+        with pytest.raises(KeyError):
+            assert rc["some_key"]
 
     @staticmethod
     def test_getitem_pass_returns_task_config():
@@ -91,7 +92,7 @@ class TestRunContext:
         assert rc.step(0) is None
 
     @staticmethod
-    def test_step_fails_when_assigned_same_index():
+    def test_step_pass_when_assigned_same_index():
         """test step fails when assigned same index"""
 
         @task(title="")
@@ -102,8 +103,10 @@ class TestRunContext:
         rc = RunContext()
         rc[tc.task_key] = tc
 
-        with pytest.raises(ValueError):
+        try:
             rc[tc.task_key] = tc
+        except ValueError as exc:
+            assert False, f"'sum_x_y' raised an exception {exc}"
 
     @staticmethod
     def test_step_passes_when_key_del():

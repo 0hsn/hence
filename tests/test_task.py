@@ -104,7 +104,7 @@ class TestRunTask:
     def test_run_tasks_pass_with_replace_title():
         """test run tasks pass with replace title"""
 
-        @task(title="task_1-{fn_key}")
+        @task(title="task_1-{fn_task_key}")
         def task_1(**kwargs):
             return task_1.__name__
 
@@ -124,11 +124,79 @@ class TestRunTask:
             ]
         )
 
-        fc = hence_config.task(run_sequence[0])
-        assert "task_1-0" == fc.title
+        fc = TaskUtil.with_task_key(run_sequence[0])
+        assert f"task_1-{run_sequence[0]}" == fc.title
 
-        fc = hence_config.task(run_sequence[1])
-        assert "task_2-" == fc.title
+        _, run_id = run_sequence[1].split(".", 1)
+        fc = TaskUtil.with_task_key(run_sequence[1])
+        assert f"task_2-{run_id}" == fc.title
 
-        fc = hence_config.task(run_sequence[2])
-        assert "task_3-2" == fc.title
+        seq_id, _ = run_sequence[2].split(".", 1)
+        fc = TaskUtil.with_task_key(run_sequence[2])
+        assert f"task_3-{seq_id}" == fc.title
+
+    @staticmethod
+    def test_run_tasks_pass_with_multiple_run_tasks():
+        """test run tasks pass with multiple run tasks"""
+
+        @task(title="task_1-{fn_task_key}")
+        def task_1(**kwargs):
+            return task_1.__name__
+
+        @task(title="task_2-{fn_run_id}")
+        def task_2(**kwargs):
+            return task_2.__name__
+
+        @task(title="task_3-{fn_seq_id}")
+        def task_3(**kwargs):
+            return task_2.__name__
+
+        run_sequence = run_tasks(
+            [
+                (task_1, {}),
+                (task_2, {}),
+                (task_3, {}),
+            ],
+        )
+
+        fc = TaskUtil.with_task_key(run_sequence[0])
+        assert f"task_1-{run_sequence[0]}" == fc.title
+
+        _, run_id = run_sequence[1].split(".", 1)
+        fc = TaskUtil.with_task_key(run_sequence[1])
+        assert f"task_2-{run_id}" == fc.title
+
+        seq_id, _ = run_sequence[2].split(".", 1)
+        fc = TaskUtil.with_task_key(run_sequence[2])
+        assert f"task_3-{seq_id}" == fc.title
+
+        @task(title="task_4-{fn_task_key}")
+        def task_4(**kwargs):
+            return task_4.__name__
+
+        @task(title="task_5-{fn_run_id}")
+        def task_5(**kwargs):
+            return task_5.__name__
+
+        @task(title="task_6-{fn_seq_id}")
+        def task_6(**kwargs):
+            return task_6.__name__
+
+        run_sequence = run_tasks(
+            [
+                (task_4, {}),
+                (task_5, {}),
+                (task_6, {}),
+            ]
+        )
+
+        fc = TaskUtil.with_task_key(run_sequence[0])
+        assert f"task_4-{run_sequence[0]}" == fc.title
+
+        _, run_id = run_sequence[1].split(".", 1)
+        fc = TaskUtil.with_task_key(run_sequence[1])
+        assert f"task_5-{run_id}" == fc.title
+
+        seq_id, _ = run_sequence[2].split(".", 1)
+        fc = TaskUtil.with_task_key(run_sequence[2])
+        assert f"task_6-{seq_id}" == fc.title
