@@ -230,7 +230,6 @@ class HenceContext:
         self.context: ContextVar[dict] = ContextVar(
             CTX_NAME,
             default={
-                CTX_FN_BASE: {},
                 CTX_GR_BASE: {},
                 CTX_RL_BASE: {},
                 CTX_TI_BASE: {},
@@ -248,7 +247,6 @@ class HenceContext:
         if not isinstance(
             obj,
             (
-                TaskConfig,
                 GroupConfig,
                 TitleConfig,
                 RunContext,
@@ -256,11 +254,7 @@ class HenceContext:
         ):
             raise TypeError("context_add :: unsupported type")
 
-        if isinstance(obj, TaskConfig):
-            context_val = self.context.get()
-            context_val[CTX_FN_BASE][obj.task_key] = obj
-
-        elif isinstance(obj, TitleConfig):
+        if isinstance(obj, TitleConfig):
             context_val = self.context.get()
             context_val[CTX_TI_BASE][obj.task_key] = obj.title
 

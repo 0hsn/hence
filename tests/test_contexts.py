@@ -71,23 +71,8 @@ class TestRunContext:
         assert isinstance(rc["some_key"], TaskConfig)
 
 
-class TestHenceContext:
-    """TestHenceContext"""
-
-    @staticmethod
-    def test_context_add_pass():
-        """test_context_add_pass"""
-
-        @task()
-        def one_task(**kwargs): ...
-
-        _fc = TaskConfig(one_task, {}, sid="1")
-
-        _context.context_add(_fc)
-        ctx = _context.context.get()
-
-        assert CTX_FN_BASE in ctx
-        assert "1" in ctx[CTX_FN_BASE]
+class TestHenceContextContextAdd:
+    """Test HenceConfig.context_add"""
 
     @staticmethod
     def test_context_add_fail():
@@ -97,27 +82,6 @@ class TestHenceContext:
             _context.context_add([1, 2, 3])
 
         assert te.match("context_add :: unsupported type")
-
-
-class TestHenceContextContextAdd:
-    """Test HenceConfig.context_add"""
-
-    @staticmethod
-    def test_context_add_pass_for_func_config():
-        """test context add pass"""
-
-        hc = HenceContext()
-
-        @task()
-        def some_function(**kwargs):
-            """some_function"""
-
-        fc = TaskConfig(some_function, {}, sid="1")
-
-        hc.context_add(fc)
-        ctx_val = hc.context.get()
-
-        assert "1" in ctx_val[CTX_FN_BASE]
 
     @staticmethod
     def test_context_add_pass_for_title_config():
