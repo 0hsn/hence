@@ -85,6 +85,26 @@ class TaskConfig:
 
         return str(self.asdict())
 
+    def format_title(self) -> bool:
+        """format title"""
+
+        if "{" in self.title and "}" in self.title:
+            t_title: str = self.title
+
+            try:
+                t_title = t_title.format(
+                    fn_task_key=self.task_key,
+                    fn_name=self.function.__name__,
+                    fn_run_id=self.run_id,
+                    fn_seq_id=self.seq_id,
+                )
+            except KeyError as e:
+                _logger.log(_logger.ERROR, "`%s` not found in task.title.", str(e))
+                raise e
+
+            self.title = t_title
+            return True
+        return False
 
 class RunContext(UserDict):
     """Context data for Group and bloc of Task"""
@@ -403,26 +423,9 @@ class FunctionTypeExecutor:
 
         fn_cfg: TaskConfig = hence_config.context_get(CTX_FN_BASE, task_key)
 
-        t_title: str = fn_cfg.title
 
-        # replace supported variables in title
-        if "{" in t_title and "}" in t_title:
+        if task_cfg.format_title():
 
-            try:
-                t_title = t_title.format(
-                    fn_key=fn_cfg.task_key,
-                    fn_name=fn_cfg.function.__name__,
-                    fn_run_id=fn_cfg.run_id,
-                    fn_seq_id=fn_cfg.seq_id,
-                )
-            except KeyError as e:
-                _logger.log(_logger.ERROR, "`%s` not found in task.title.", str(e))
-                raise e
-
-            fn_cfg.title = t_title
-            hence_config.context_add(fn_cfg)
-
-        _logger.log(_logger.DEBUG, "`%s::%s` is executing.", t_title, task_key)
 
         return fn_cfg.function(**fn_cfg.parameters)
 
