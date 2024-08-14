@@ -73,10 +73,10 @@ class TestGroup:
             ],
         )
 
-        _task_d1 = Utils.get_task_config(task_ids[0])
+        _task_d1 = Utils.get_task(task_ids[0])
         assert {"a": 12} == _task_d1.result
 
-        _task_d1 = Utils.get_task_config(task_ids[1])
+        _task_d1 = Utils.get_task(task_ids[1])
         assert {"b": 123} == _task_d1.result
 
         hc._setup_context()
@@ -106,10 +106,10 @@ class TestGroup:
             ],
         )
 
-        _task_d1 = Utils.get_task_config(task_ids[0])
+        _task_d1 = Utils.get_task(task_ids[0])
         assert {"a": 12} == _task_d1.result
 
-        _task_d1 = Utils.get_task_config(task_ids[1])
+        _task_d1 = Utils.get_task(task_ids[1])
         assert {"b": 123} == _task_d1.result
 
         GRP_NAME_B = "b-group"
@@ -133,10 +133,10 @@ class TestGroup:
             ],
         )
 
-        _task_d1 = Utils.get_task_config(task_ids[0])
+        _task_d1 = Utils.get_task(task_ids[0])
         assert {"a": 12} == _task_d1.result
 
-        _task_d1 = Utils.get_task_config(task_ids[1])
+        _task_d1 = Utils.get_task(task_ids[1])
         assert {"b": 123} == _task_d1.result
 
         hc._setup_context()

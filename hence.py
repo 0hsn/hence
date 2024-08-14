@@ -163,7 +163,7 @@ class Utils:
         return TaskConfig.from_task_key(f"{seq_id}.{self.run_context_id}")
 
     @staticmethod
-    def get_task_config(task_key: str) -> TaskConfig:
+    def get_task(task_key: str) -> TaskConfig:
         """Get a task by task_key"""
 
         return TaskConfig.from_task_key(task_key)
