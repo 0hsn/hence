@@ -152,15 +152,11 @@ class RunContextSupport:
 class Utils:
     """Utils to get state data"""
 
-    def __init__(self, /, run_context_id: str = "") -> None:
-        """Utils init"""
-
-        self.run_context_id = run_context_id
-
-    def with_seq(self, /, seq_id: int) -> TaskConfig:
+    @staticmethod
+    def get_step(seq_id: int, run_id: str) -> TaskConfig:
         """Get a task by seq_id"""
 
-        return TaskConfig.from_task_key(f"{seq_id}.{self.run_context_id}")
+        return TaskConfig.from_task_key(f"{seq_id}.{run_id}")
 
     @staticmethod
     def get_task(task_key: str) -> TaskConfig:
