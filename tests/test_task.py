@@ -1,7 +1,5 @@
 """Test @task()"""
 
-from icecream import ic
-
 from hence import TaskConfig, Utils, _context, task, run_tasks, CTX_TI_BASE
 
 

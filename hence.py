@@ -159,6 +159,12 @@ class Utils:
 
         return TaskConfig.from_task_key(task_key)
 
+    @staticmethod
+    def enable_logging(enable: bool = False) -> None:
+        """Enable logging"""
+
+        _logger.enable_logging = enable
+
 
 class HenceLogger:
     """HenceLogger"""
