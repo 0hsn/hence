@@ -13,7 +13,6 @@ from types import FunctionType
 from typing import Any, NamedTuple, Protocol, Union
 import uuid
 
-from immutabledict import immutabledict
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
 
@@ -52,7 +51,7 @@ class TaskConfig:
         _title = _context.context_get(CTX_TI_BASE, fn.__name__)
 
         self.function: FunctionType = fn
-        self.parameters: immutabledict = immutabledict(params)
+        self.parameters: dict = params
         self.run_id: str = rid
         self.seq_id: str = sid
         self.title: str = _title if _title else fn.__name__
@@ -75,11 +74,7 @@ class TaskConfig:
     def asdict(self) -> dict:
         """asdict"""
 
-        result = self.__dict__
-        if "parameters" in result:
-            result["parameters"] = dict(result["parameters"])
-
-        return result
+        return self.__dict__
 
     def __repr__(self) -> str:
         """__repr__"""
