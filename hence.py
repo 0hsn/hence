@@ -447,7 +447,7 @@ class FunctionTypeExecutor:
     def execute(self, task_key: str) -> Any:
         """Execute"""
 
-        _, run_context_id = task_key.split(".", 1)
+        curr_step, run_context_id = task_key.split(".", 1)
 
         rlc: RunContext = RunContextSupport.from_context(run_context_id)
         task_cfg: TaskConfig = rlc[task_key]
@@ -459,6 +459,10 @@ class FunctionTypeExecutor:
         _logger.log(
             _logger.DEBUG, "`%s::%s` is executing.", task_cfg.title, task_cfg.task_key
         )
+
+        task_cfg.parameters |= {
+            "_META_": {"run_id": run_context_id, "current_step": curr_step}
+        }
 
         return task_cfg.function(**task_cfg.parameters)
 

@@ -202,3 +202,48 @@ class TestRunTask:
         seq_id, _ = run_sequence[2].split(".", 1)
         fc = Utils.get_task(run_sequence[2])
         assert f"task_6-{seq_id}" == fc.title
+
+
+class TestUtils:
+    """TestUtils"""
+
+    @staticmethod
+    def test_get_task_pass():
+        """test with task key pass"""
+
+        @task(title="task_4-{fn_task_key}")
+        def task_4(**kwargs):
+            return task_4.__name__
+
+        run_sequence = run_tasks([(task_4, {})])
+
+        fc = Utils.get_task(run_sequence[0])
+        assert isinstance(fc, TaskConfig)
+
+    @staticmethod
+    def test_get_step_pass():
+        """test with task key pass"""
+
+        @task()
+        def task_3(**kwargs):
+            return "task_3"
+
+        @task()
+        def task_4(**kwargs):
+            dct = kwargs["_META_"]
+
+            if "current_step" in dct and "run_id" in dct:
+                step_0 = Utils.get_step(0, dct["run_id"])
+
+                return f'{step_0.result}.{dct["current_step"]}.{dct["run_id"]}'
+
+        run_sequence = run_tasks(
+            [
+                (task_3, {}),
+                (task_4, {"var": {"a": 1, "c": 3}}),
+            ],
+            "test_get_step_pass",
+        )
+
+        fc = Utils.get_task(run_sequence[1])
+        assert fc.result == "task_3.1.test_get_step_pass"
