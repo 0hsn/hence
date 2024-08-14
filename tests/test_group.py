@@ -58,11 +58,13 @@ class TestGroup:
         @ag
         @task()
         def sample_task(**kwargs):
+            del kwargs["_META_"]
             return kwargs
 
         @ag
         @task(title="SampleTask1")
         def sample_task_1(**kwargs):
+            del kwargs["_META_"]
             return kwargs
 
         task_ids = run_group(
@@ -91,11 +93,13 @@ class TestGroup:
         @ag
         @task()
         def sample_task(**kwargs):
+            del kwargs["_META_"]
             return kwargs
 
         @ag
         @task(title="SampleTask1")
         def sample_task_1(**kwargs):
+            del kwargs["_META_"]
             return kwargs
 
         task_ids = run_group(
@@ -118,11 +122,13 @@ class TestGroup:
         @bg
         @task()
         def sample_task_b(**kwargs):
+            del kwargs["_META_"]
             return kwargs
 
         @bg
         @task(title="SampleTask1")
         def sample_task_b_1(**kwargs):
+            del kwargs["_META_"]
             return kwargs
 
         task_ids = run_group(

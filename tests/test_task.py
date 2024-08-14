@@ -84,7 +84,7 @@ class TestRunTask:
         def task_1(**kwargs):
             return_stmt = task_1.__name__
 
-            if len(kwargs):
+            if "var1" in kwargs and "var2" in kwargs:
                 return_stmt += f' {kwargs["var1"]}, {kwargs["var2"]}'
 
             return return_stmt
