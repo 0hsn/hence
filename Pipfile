@@ -5,8 +5,6 @@ name = "pypi"
 
 [packages]
 paradag = "*"
-pydantic = "*"
-immutabledict = "*"
 
 [dev-packages]
 mypy = "*"
