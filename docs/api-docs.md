@@ -13,7 +13,9 @@
 
 ---
 
-## Hence Config
+## Utils
+
+_Added in `[v0.10.*]`_
 
 Hence config is a multipurpose utility, such as access context data, logging, etc. A global hence configuration is already created on module loading.
 
