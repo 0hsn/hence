@@ -283,9 +283,11 @@ It is possible to access task result data after successful task run using `Utils
 
 #### Signature
 
-```http
+```python
 Utils.get_task(task_key: str)
+```
 
+```yaml
 Parameters:
     task_key: str, a unique task key.
 
@@ -349,9 +351,11 @@ It is possible to access internal state data in between task steps using `Utils.
 
 #### Signature
 
-```http
+```python
 Utils.get_step(seq_id: int, run_id: str)
+```
 
+```yaml
 Parameters:
     seq_id: int, position in the pipeline starting from 0
     run_id: str, unique run id for this run context
