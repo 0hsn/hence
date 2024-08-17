@@ -80,8 +80,6 @@ You can run multiple tasks one after another forming a pipeline using `run_tasks
 def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]
 ```
 
-#### Parameters
-
 ```yaml
 Args:
   fn_config_list: List, containing TaskConfig data.
@@ -156,6 +154,127 @@ run_tasks([
 
 ### Access results after pipeline execution
 
+[See here](#get-task-result-after-pipeline-execution)
+
+### Access previous step result in between execution
+
+[See here](#get-intermediate-task-result-inside-pipeline-execution)
+
+## Group
+
+We can also create task groups by utilizing `group()` method. It is a decorator to create a groups of task.
+
+Group can be created using `@group` decorator.
+
+For example,
+
+```python
+do_something = group("do_something")
+
+@do_something
+@task(title="Some task title")
+def some_task_1(**kwargs): ...
+
+do_something
+@task(title=f"Some task title - {fn_run_id}")
+def some_task_2(**kwargs): ...
+```
+
+Now `some_task_1` and `some_task_2` added to the group `do_something`.
+
+Here is [web scraper](../tests/samples/web_scraping_2.py) implemented.
+
+#### Signature
+
+```python
+def group(group_id: str) -> Any
+```
+
+```yaml
+Args:
+  group_id: str, Uniquely identifiable group name
+
+Returns:
+  A decorator function to be used to tag tasks.
+```
+
+### Running a group of task
+
+We can run a group of task using `run_group()`.
+
+#### Signature
+
+```python
+def run_group(group_id: str, task_params: list[dict]) -> Any
+```
+
+```yaml
+Args:
+  group_id: str, Uniquely identifiable group name
+  task_params: list[dict], List is dictionaries. Dictionaries contains parameters task function by sequence. Pass None is not parameter to pass.
+
+Returns:
+  Task key ids.
+```
+
+#### Remarks
+
+Returned task key ids can used with `Utils.get_task` to get the TaskConfig.
+
+#### Example
+
+In the following example we are:
+
+1. Creating a group named `do_something_for_a_work`
+2. Then add `some_task_1`, `some_task_2` and `some_task_3` tasks to it.
+3. Then using `run_group` we are running the group while passing parameters to each the functions.
+
+```python
+do_something = group("do_something_for_a_work")
+
+@do_something
+@task(title="Some task title")
+def some_task_1(var1, **kwargs): ...
+
+do_something
+@task(title=f"Some task title - {fn_run_id}")
+def some_task_2(var2, **kwargs): ...
+
+do_something
+@task(title=f"Some task title - {fn_run_id}-{fn_seq_id}")
+def some_task_3(var3, **kwargs): ...
+
+task_ids = run_group(
+  "do_something_for_a_work", 
+  [
+    {"var1": 1},
+    {"var2": 2},
+    {"var3": 3},
+  ]
+)
+...
+```
+
+As usual we can use `Utils` method to get results in the tasks and after running the tasks.
+
+## Utils
+
+Hence config is a multipurpose utility, such as access context data, logging, etc. A global hence configuration is already created on module loading.
+
+Context holds all the internal data to be executed as well as results after execution.
+
+### Enable logging
+
+```python
+from hence import Utils
+
+...
+# to enable logging to stderr
+Utils.enable_logging(True)
+```
+
+### Get task result after pipeline execution
+
 It is possible to access task result data after successful task run using `Utils.get_task` static method.
 
 `run_tasks(..)` always returns a list of task keys for an executed session. These keys can can used with `Utils.get_task` to get the TaskConfig.
@@ -222,7 +341,7 @@ for task_k in task_keys:
     print(fn_conf.result)
 ```
 
-### Access previous step result in between execution
+### Get intermediate task result inside pipeline execution
 
 It is possible to access internal state data in between task steps using `Utils.get_step` static method.
 
@@ -279,27 +398,3 @@ task_inf = Utils.get_task(task_keys[1])
 # Contains task result when task is executed or None
 assert task_inf.result == 200
 ```
-
-## Utils
-
-Hence config is a multipurpose utility, such as access context data, logging, etc. A global hence configuration is already created on module loading.
-
-Context holds all the internal data to be executed as well as results after execution.
-
-### Enable logging
-
-```python
-from hence import Utils
-
-...
-# to enable logging to stderr
-Utils.enable_logging(True)
-```
-
-### Get task result after pipeline execution
-
-[See here](#access-results-after-pipeline-execution)
-
-### Get intermediate task result inside pipeline execution
-
-[See here](#access-previous-step-result-in-between-execution)
