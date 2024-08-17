@@ -1,15 +1,14 @@
 # API Docs
 
-- [Hence Config](#hence-config)
-  - [Enable logging](#enable-logging)
-  - [Access task result after running tasks](#access-task-result-after-running-tasks)
-  - [Access `TaskConfig` as a dict](#access-Taskconfig-as-a-dict)
-  - [Access `task_key` from `TaskConfig`](#access-task_key-from-Taskconfig)
 - [Task](#task)
-  - [Define a task and run it](#define-a-task-and-run-it)
-  - [Run tasks with no params](#run-tasks-with-no-params)
-  - [Run tasks with params](#run-tasks-with-params)
-  - [Run tasks with `run_id`](#run-tasks-with-run_id)
+  - [Define a minimal task and run it](#define-a-minimal-task-and-run-it)
+  - [Run tasks in pipeline](#run-tasks-in-pipeline)
+  - [Access results after pipeline execution](#access-results-after-pipeline-execution)
+  - [Access previous step result in between execution](#access-previous-step-result-in-between-execution)
+- [Utils](#ut)
+  - [Enable logging](#enable-logging)
+  - [Get task result after pipeline execution](#get-task-result-after-pipeline-execution)
+  - [Get intermediate task result inside pipeline execution](#get-intermediate-task-result-inside-pipeline-execution)
 
 ---
 
