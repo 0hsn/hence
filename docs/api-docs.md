@@ -177,7 +177,7 @@ do_something = group("do_something")
 @task(title="Some task title")
 def some_task_1(**kwargs): ...
 
-do_something
+@do_something
 @task(title=f"Some task title - {fn_run_id}")
 def some_task_2(**kwargs): ...
 ```
@@ -238,11 +238,11 @@ do_something = group("do_something_for_a_work")
 @task(title="Some task title")
 def some_task_1(var1, **kwargs): ...
 
-do_something
+@do_something
 @task(title=f"Some task title - {fn_run_id}")
 def some_task_2(var2, **kwargs): ...
 
-do_something
+@do_something
 @task(title=f"Some task title - {fn_run_id}-{fn_seq_id}")
 def some_task_3(var3, **kwargs): ...
 
