@@ -1,119 +1,56 @@
 # API Docs
 
-- [Hence Config](#hence-config)
-  - [Enable logging](#enable-logging)
-  - [Access task result after running tasks](#access-task-result-after-running-tasks)
-  - [Access `FuncConfig` as a dict](#access-funcconfig-as-a-dict)
-  - [Access `task_key` from `FuncConfig`](#access-task_key-from-funcconfig)
 - [Task](#task)
-  - [Define a task and run it](#define-a-task-and-run-it)
-  - [Run tasks with no params](#run-tasks-with-no-params)
-  - [Run tasks with params](#run-tasks-with-params)
-  - [Run tasks with `run_id`](#run-tasks-with-run_id)
-- [Work](#work)
-  - [Defining a work](#defining-a-work)
-  - [Work with `before` and `after` hook](#work-with-before-and-after-hook)
-  - [Access returned values from `before` hook in _work_](#access-returned-values-from-before-hook-in-work)
-  - [Calling a work](#calling-a-work)
-- [WorkExecFrame](#workexecframe)
-  - [Defining a WorkExecFrame](#defining-a-workexecframe)
-  - [Passing parameter to a Work via WorkExecFrame](#passing-parameter-to-a-work-via-workexecframe)
-  - [Execute a WorkExecFrame](#execute-a-workexecframe)
-  - [Access a WorkExecFrame output](#access-a-workexecframe-output)
-- [WorkGroup](#workgroup)
-  - [Using a WorkGroup](#using-a-workgroup)
-  - [Accessing previous step data in runtime](#accessing-previous-step-data-in-runtime)
-- [WorkFlow](#workflow)
+  - [Define a minimal task and run it](#define-a-minimal-task-and-run-it)
+  - [Run tasks in pipeline](#run-tasks-in-pipeline)
+  - [Access results after pipeline execution](#access-results-after-pipeline-execution)
+  - [Access previous step result in between execution](#access-previous-step-result-in-between-execution)
+- [Group](#group)
+  - [Running a group of task](#running-a-group-of-task)
+- [Utils](#utils)
+  - [Enable logging](#enable-logging)
+  - [Get task result after pipeline execution](#get-task-result-after-pipeline-execution)
+  - [Get intermediate task result inside pipeline execution](#get-intermediate-task-result-inside-pipeline-execution)
 
 ---
 
-## Hence Config
-
-_Added in `[v0.9.*]`_
-
-Hence config is a multipurpose utility, such as access context data, logging, etc. A global hence configuration is already created on module loading.
-
-### Enable logging
-
-```python
-from hence import hence_config
-
-...
-# to enable logging to stderr
-hence_config.enable_log = True
-```
-
-### Access task result after running tasks
-
-It is possible to access internal state data in between task steps using `hence_config.task`.
-
-Signature:
-
-```http
-HenceConfig.task(obj_key: str)
-
-Parameters:
-    obj_key: string, name of the function to access result for.
-
-Returns:
-    - Resulting FuncConfig object for the function key given.
-    - None when function not found.
-```
-
-```python
-from hence import hence_config
-
-...
-
-# returns FuncConfig  from context
-task_inf = hence_config.task("function_name")
-task_inf.result # contains task result when task is executed or None
-```
-
-`FuncConfig` object holds details of a function execution. For each function that is passed to `run_tasks` a `FuncConfig` object is created and saved in the context.
-
-### Access `FuncConfig` as a dict
-
-```python
-...
-
-# returns FuncConfig  from context
-task_inf = hence_config.task("function_name")
-task_inf.asdict()
-```
-
-### Access `task_key` from `FuncConfig`
-
-When you pass a `run_id` as a `run_tasks()` parameter, the function key gets updated. See [details here](#run-tasks-with-run_id). You can access that unique task execution identifier as follows.
-
-```python
-...
-
-run_tasks([
-    (function_name, {}, "456")
-])
-
-# returns FuncConfig  from context
-task_inf = hence_config.task("function_name")
-task_inf.task_key # str[function_name.456]
-```
-
 ## Task
 
-_Added in `[v0.9.*]`_
-
-An alternative implementation for `@work` decorator, that is more cognitive friendly. To create a task based minimal workflow. Task represents smallest unit of work.
+A decorator, to create a task based minimal workflow. Task represents smallest unit of work.
 
 Task can be created using `@task()` decorator.
 
-Here is [web scraper](../tests/samples/web_scraping_2.py) implemented.
+Here is [web scraper](../tests/samples/web_scraping.py) implemented.
 
-**Parameters**
+#### Parameters
 
-`title` String type. Represents the title of the task. Title can contain `{fn_key}`, `{fn_name}`, `{fn_run_id}` these values to distinguish from other similar group.
+`title` String type. Represents the title of the task. Title can contain following:
 
+  `fn_task_key` adds the task key, <br>
+  `fn_name` name of the function, <br>
+  `fn_run_id` the run context id, <br>
+  `fn_seq_id` the sequence number for as specific run, <br>
 
-### Define a task and run it
+Example:
+
+```python
+@task(title="Some task title")
+def some_task(**kwargs): ...
+
+@task(title=f"Some task title - {fn_run_id}")
+def some_task(**kwargs): ...
+
+@task(title=f"Some task title - {fn_run_id}-{fn_seq_id}")
+def some_task(**kwargs): ...
+```
+
+#### Task definition
+
+Any valid python function, that represent a small unit of work, can be a task. In the above example `some_task(**kwargs)` is a task function.
+
+`**kwargs` is a required parameter in all task function.
+
+### Define a minimal task and run it
 
 ```python
 @task()
@@ -124,16 +61,50 @@ def fn_1(**kwargs):
 fn_1(var1=1, val2="sample string")
 ```
 
-### Run tasks with no params
+This can be similarly written as,
 
 ```python
-@task(title="")
-def fn_1(**kwargs):
-  ...
+@task()
+def fn_1(var1, val2, **kwargs):
+  assert var1 == 1
+  assert val2 == "sample string"
 
-@task(title="")
+fn_1(var1=1, val2="sample string")
+```
+
+### Run tasks in pipeline
+
+You can run multiple tasks one after another forming a pipeline using `run_tasks()` function.
+
+#### Signature
+
+```python
+def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]
+```
+
+```yaml
+Args:
+  fn_config_list: List, containing TaskConfig data.
+  run_id: str, for unique run id. Slug: [a-zA-z0-9\-_]
+
+Returns:
+  Resulting list of TaskConfig task_key. This can be used to pull data from context.
+```
+
+#### Remarks
+
+`run_tasks()` receives a list of tuple, where 1st tuple item is a `@task` designated function handle, to be executed. 2nd item is a dictionary, where keys are the function parameter name, and values are value to be passed to the parameter.
+
+#### Run tasks with no params
+
+```python
+@task()
+def fn_1(**kwargs):
+    assert len(kwargs) == 0
+
+@task()
 def fn_2(**kwargs):
-  ...
+  assert len(kwargs) == 0
 
 run_tasks([
   (fn_1, {}),
@@ -141,419 +112,295 @@ run_tasks([
 ])
 ```
 
-### Run tasks with params
+#### Run tasks with params
+
+> NOTE: we are able to run same function with different parameters, while using `run_tasks(...)`. See below example.
 
 ```python
-@task(title="")
+@task()
 def fn_1(**kwargs):
-  assert kwargs["var1"] == "string"
-  assert kwargs["val2"] == 23
-
+  assert isinstance(kwargs["var1"], "string")
+  assert isinstance(kwargs["val2"], 23)
 
 # run all the tasks
-# - with no params to pass to tasks
 run_tasks([
-  (fn_1, {var1: "string", var2: 23}),
+  (fn_1, {var1: "string one", var2: 23}),
+  (fn_1, {var1: "string two", var2: 32}),
 ])
 ```
 
-### Run tasks with `run_id`
+#### Run tasks with `run_id`
 
-In the following example we are running the same function, therefore, we are passing different `run_id` to preserve each task info using different key.
+We are able to pass a unique id to separately identify a bulk of operation.
 
 It is _IMPORTANT_ to keep `run_id` _**unique**_.
 
 ```python
-from hence import task, run_tasks, hence_config
+from hence import task, run_tasks
 
 @task(title="")
 def fn_1(**kwargs):
   assert kwargs["var1"] == "string"
   assert kwargs["val2"] == 23
 
+# a unique run id
+run_id = "some-random-unique"
+
 # run all the tasks
 run_tasks([
-  (fn_1, {var1: "string", var2: 23}, "x1"), # x1, x2, x3 is run_id
-  (fn_1, {var1: "string", var2: 23}, "x2"),
-  (fn_1, {var1: "string", var2: 23}, "x3"),
-])
+  (fn_1, {var1: "string", var2: 23}),
+  (fn_1, {var1: "string", var2: 23}),
+  (fn_1, {var1: "string", var2: 23}),
+], run_id)
 ```
 
-To access the result for each run, you can access as follows. `fn_1.x1`, `fn_1.x2`, `fn_1.x3` are unique function task_key or function run identifier. 
+### Access results after pipeline execution
 
-Function run identifier are made of `functon_name.run_id`.
+[See here](#get-task-result-after-pipeline-execution)
+
+### Access previous step result in between execution
+
+[See here](#get-intermediate-task-result-inside-pipeline-execution)
+
+## Group
+
+We can also create task groups by utilizing `group()` method. It is a decorator to create a groups of task.
+
+Group can be created using `@group` decorator.
+
+For example,
 
 ```python
-run_tasks([
-    ...
-])
+do_something = group("do_something")
 
-fn_1_result = hence_config.task("fn_1.x1").result
-fn_2_result = hence_config.task("fn_1.x2").result
-fn_3_result = hence_config.task("fn_1.x3").result
+@do_something
+@task(title="Some task title")
+def some_task_1(**kwargs): ...
+
+@do_something
+@task(title=f"Some task title - {fn_run_id}")
+def some_task_2(**kwargs): ...
 ```
 
----
+Now `some_task_1` and `some_task_2` added to the group `do_something`.
 
-## Work
+Here is [web scraper](../tests/samples/web_scraping_g.py) implemented.
 
-Work hold a small unit of achievable to do. It's really just a callable function that does something, with some magic attached.
-
-### Defining a work
-
-The core of this library is **_work_**, a small group of python instructions. you can make any function a **_work_** when the function implement `@work(..)` decorator or is a subclass to `AbstractWork` that implement `__work__(..)` abstract method. e.g.
+#### Signature
 
 ```python
-class Sum(AbstractWork):
-    """A sample child Work"""
-
-    def __work__(self, **kwargs) -> None:
-        """
-        implemented abstract implementation that does a small task.
-        In this case print a string.
-        """
-
-        print("Sum")
+def group(group_id: str) -> Any
 ```
 
-this is same a writing with annotation. i.e.
+```yaml
+Args:
+  group_id: str, Uniquely identifiable group name
 
-```python
-@work()
-def sum(**kwargs) -> None:
-    """
-    implemented decorated function that does a small task.
-    In this case print a string.
-    """
-
-    print("Sum")
+Returns:
+  A decorator function to be used to tag tasks.
 ```
 
-> `**kwargs` is a required parameter for a work definition. Library with raise exception if it is not added as parameter.
+### Running a group of task
 
-> work can `return` a any value as the work function return. See here for [how to use returned values](#).
+We can run a group of task using `run_group()`.
 
-### Work with `before` and `after` hook
-
-It is possible to execute a hook function before and after for work definition. This is useful for setup and teardown works before and after execution of a work.
-
-For a class based work definition, before and after can be added such as:
+#### Signature
 
 ```python
-class Sum(AbstractWork):
-
-    def __work__(self, **kwargs) -> None:
-        print("Sum")
-
-    def __before__(self) -> None:
-        print("Executed before Sum")
-
-    def __after__(self) -> None:
-        print("Executed after Sum")
+def run_group(group_id: str, task_params: list[dict]) -> Any
 ```
 
-In case of decorator based function, i.e.
+```yaml
+Args:
+  group_id: str, Uniquely identifiable group name
+  task_params: list[dict], List is dictionaries. Dictionaries contains parameters task function by sequence. Pass None is not parameter to pass.
 
-```python
-def before_hook(self) -> None:
-    print("Executed before Sum")
-
-def after_hook(self) -> None:
-    print("Executed after Sum")
-
-@work(before=before_hook, after=after_hook)
-def sum(**kwargs) -> None:
-    print("Sum")
+Returns:
+  Task key ids.
 ```
 
-### Access returned values from `before` hook in _work_
+#### Remarks
 
-When a `before` hook given the return result from it can be accessed as `kwargs['__before__']`.
+Returned task key ids can used with `Utils.get_task` to get the TaskConfig.
 
-```python
-class Sum(AbstractWork):
+#### Example
 
-    def __work__(self, **kwargs) -> None:
-        assert f"{kwargs['__before__']}.Sum" == "Before.Sum"
+In the following example we are:
 
-    def __before__(self) -> str:
-        return "Before"
-```
-
-In case of decorator based function, i.e.
+1. Creating a group named `do_something_for_a_work`
+2. Then add `some_task_1`, `some_task_2` and `some_task_3` tasks to it.
+3. Then using `run_group` we are running the group while passing parameters to each the functions.
 
 ```python
-def before_hook(self) -> None:
-    print("Executed before Sum")
+do_something = group("do_something_for_a_work")
 
-@work(before=before_hook, after=after_hook)
-def sum(**kwargs) -> None:
-    assert f"{kwargs['__before__']}.Sum" == "Before.Sum"
-```
+@do_something
+@task(title="Some task title")
+def some_task_1(var1, **kwargs): ...
 
-### Calling a work
+@do_something
+@task(title=f"Some task title - {fn_run_id}")
+def some_task_2(var2, **kwargs): ...
 
-Any working is a fully working python function so it can be called as such.
+@do_something
+@task(title=f"Some task title - {fn_run_id}-{fn_seq_id}")
+def some_task_3(var3, **kwargs): ...
 
-```python
-class Sum(AbstractWork):
-
-    def __work__(self, **kwargs) -> None:
-        assert f"{kwargs['__before__']}.Sum" == "Before.Sum"
-
-    def __before__(self) -> str:
-        return "Before"
-
-sum = Sum()
-sum()
-```
-
-In case of decorator based function, i.e.
-
-```python
-def before_hook(self) -> None:
-    print("Executed before Sum")
-
-@work(before=before_hook, after=after_hook)
-def sum(**kwargs) -> None:
-    assert f"{kwargs['__before__']}.Sum" == "Before.Sum"
-
-sum()
-```
-
-## WorkExecFrame
-
-WorkExecFrame is a reactor for a Work. WorkExecFrame holds a work, execute it, store what the work producted as output.
-
-### Defining a WorkExecFrame
-
-Only a children of `AbstractWork` or `@work(..` decorated function can be added to `WorkExecFrame.function`.
-
-```python
-class Sum(AbstractWork):
-
-    def __work__(self, **kwargs) -> None:
-        assert f"{kwargs['__before__']}.Sum" == "Before.Sum"
-
-    def __before__(self) -> str:
-        return "Before"
-
-WorkExecFrame(function=Sum())
-```
-
-In case of decorator based function, i.e.
-
-```python
-def before_hook(self) -> None:
-    print("Executed before Sum")
-
-@work(before=before_hook, after=after_hook)
-def sum(**kwargs) -> None:
-    assert f"{kwargs['__before__']}.Sum" == "Before.Sum"
-
-WorkExecFrame(function=sum)
-```
-
-### Passing parameter to a Work via WorkExecFrame
-
-Work function parameters can be passed on runtime of execution via WorkExecFrame as following.
-
-```python
-class Sum(AbstractWork):
-
-    def __work__(self, **kwargs) -> None:
-        assert kwargs.get("animal") == "Cow"
-
-WorkExecFrame(function=Sum(), function_params={"animal": "Cow"})
-```
-
-In case of decorator based function, i.e.
-
-```python
-@work()
-def sum(**kwargs) -> None:
-    assert kwargs.get("animal") == "Cow"
-
-WorkExecFrame(function=sum, function_params={"animal": "Cow"})
-```
-
-### Execute a WorkExecFrame
-
-A function thats attached to WorkExecFrame can be executed utilizing parameters added using `run()` member function.
-
-```python
-@work()
-def fn(**kwargs) -> None:
-    ...
-
-wef = WorkExecFrame(function=fn, function_params={"val": 1})
-wef.run()
-```
-
-It's also possible to pass more named parameters to WorkExecFrame on the time of `run(**kwargs)` call.
-
-```python
-@work()
-def fn(**kwargs) -> None:
-    ...
-
-wef = WorkExecFrame(function=fn, function_params={"val1": 1})
-
-wef.run({"val2": 2, "val3": ["a", "b", "c"]})
-```
-
-### Access a WorkExecFrame output
-
-After successful execution of `WorkExecFrame.run()` the function response gets saved in `WorkExecFrame.function_out` member. It can be directly accessed.
-
-```python
-@work()
-def fn(**kwargs) -> Optional[str]:
-    return kwargs.get("val")
-
-wef = WorkExecFrame(function=fn, function_params={"val": 1})
-wef.run()
-
-assert wef.function_out == 1
-```
-
-> Please remember the values DO NOT get saved in `WorkExecFrame.function_out` in safe way. Therefore marshalling and unmarhalling lies on the users hand. For example, in [tests/samples/web_scraping.py](../tests/samples/web_scraping.py) see how `fetch_content` and `get_the_title` does marshalling and unmarhalling. Suggestion and discussion is alway invited to improve this behavior.
-
-## WorkGroup
-
-_WorkGroup_ is to make a group out of a collection of _WorkExecFrame_. _WorkGroup_ is the basic building block of work orchestration. _WorkGroup_ is capable of executing each _WorkExecFrame_ that is added to it.
-
-### Using a WorkGroup
-
-```python
-@work()
-def implemented_work1(**kwargs):
-    return implemented_work1.__name__
-
-@work()
-def implemented_work2(**kwargs):
-    return implemented_work2.__name__
-
-@work()
-def implemented_work3(**kwargs):
-    return implemented_work3.__name__
-
-wl = []
-
-wl.append(
-    WorkExecFrame(
-        function=implemented_work1,
-        function_params={"as": 2, "of": "date0"},
-    )
+task_ids = run_group(
+  "do_something_for_a_work", 
+  [
+    {"var1": 1},
+    {"var2": 2},
+    {"var3": 3},
+  ]
 )
-wl.append(
-    WorkExecFrame(
-        function=implemented_work2,
-        function_params={"as": 2, "of": "date1"},
-    )
-)
-wl.append(
-    WorkExecFrame(
-        function=implemented_work3,
-        function_params={"as": 2, "of": "date2"},
-    )
+...
+```
+
+As usual we can use `Utils` method to get results in the tasks and after running the tasks.
+
+## Utils
+
+Hence config is a multipurpose utility, such as access context data, logging, etc. A global hence configuration is already created on module loading.
+
+Context holds all the internal data to be executed as well as results after execution.
+
+### Enable logging
+
+```python
+from hence import Utils
+
+...
+# to enable logging to stderr
+Utils.enable_logging(True)
+```
+
+### Get task result after pipeline execution
+
+It is possible to access task result data after successful task run using `Utils.get_task` static method.
+
+`run_tasks(..)` always returns a list of task keys for an executed session. These keys can can used with `Utils.get_task` to get the TaskConfig.
+
+#### Signature
+
+```python
+Utils.get_task(task_key: str)
+```
+
+```yaml
+Parameters:
+    task_key: str, a unique task key.
+
+Returns:
+    - Resulting TaskConfig object for the function key given.
+    - None when function not found.
+```
+
+#### Example
+
+For example
+
+```python
+from hence import Utils
+
+task_keys = run_tasks(
+    [
+        (function_name, {})
+    ]
 )
 
-wg = WorkGroup(wl)
+# returns TaskConfig  from context
+task_inf = Utils.get_task(task_keys[0])
 
-wg.setup_dag()
-wg.execute_dag()
+# Contains task result when task is executed or None
+task_inf.result
 ```
 
-`WorkGroup.execute_dag()` returns a list that contains all the _WorkExecFrame_ with execution results, can be accessible with `WorkExecFrame.function_out`.
-
-### Accessing previous step data in runtime
-
-When executing a WorkGroup, it possible to access previous state results in the _Work_ inside _WorkExecFrame_. See below example.
+More details example may look like following.
 
 ```python
-@work()
-def implemented_work1(**kwargs):
-    return 1
+from hence import task, run_tasks, Utils
 
-@work()
-def implemented_work2(**kwargs):
-    return kwargs.get("__works__")["one"] + 1
+@task(title="")
+def fn_1(**kwargs):
+  assert kwargs["var1"] == "string"
+  assert kwargs["val2"] == 23
 
-@work()
-def implemented_work3(**kwargs):
-    return kwargs.get("__works__")["two"] + 1
+# a unique run id
+run_id = "some-random-unique"
 
-wl = []
+# run all the tasks
+task_keys = run_tasks([
+  (fn_1, {var1: "string", var2: 23}),
+  (fn_1, {var1: "string", var2: 23}),
+  (fn_1, {var1: "string", var2: 23}),
+], run_id)
 
-wl.append(
-    WorkExecFrame(
-        id_="one"
-        function=implemented_work1,
-        function_params={"as": 2, "of": "date0"},
-    )
-)
-wl.append(
-    WorkExecFrame(
-        id_="two"
-        function=implemented_work2,
-        function_params={"as": 2, "of": "date1"},
-    )
-)
-wl.append(
-    WorkExecFrame(
-        function=implemented_work3,
-        function_params={"as": 2, "of": "date2"},
-    )
-)
+# access run results
+for task_k in task_keys:
+    
+    # get the TaskConfig object from context
+    fn_conf = Utils.get_task(task_k)
 
-wg = WorkGroup(wl)
-
-wg.setup_dag()
-wg.execute_dag()
+    print(fn_conf.result)
 ```
 
-## WorkFlow
+### Get intermediate task result inside pipeline execution
 
-_Deprecated in `0.9.5`_
+It is possible to access internal state data in between task steps using `Utils.get_step` static method.
 
-_WorkFlow_ is a collection of _WorkGroup_. _WorkFlow_ is a top-level flow building block. e.g.
+#### Signature
 
 ```python
-class ImplementedWork1(AbstractWork):
-
-    def __work__(self, **kwargs):
-        print(1)
-
-class ImplementedWork2(AbstractWork):
-
-    def __work__(self, **kwargs):
-        print(2)
-
-class ImplementedWork3(AbstractWork):
-
-    def __work__(self, **kwargs):
-        print(3)
-
-class ImplementedWork4(AbstractWork):
-
-    def __work__(self, **kwargs):
-        print(4)
-
-wl1 = []
-wl1.append(WorkExecFrame(function=ImplementedWork1()))
-wl1.append(WorkExecFrame(function=ImplementedWork2()))
-
-wl2 = []
-wl2.append(WorkExecFrame(function=ImplementedWork3()))
-wl2.append(WorkExecFrame(function=ImplementedWork4()))
-
-wf = Workflow([
-    WorkGroup(wl1),
-    WorkGroup(wl2),
-])
-
-wf.execute_dag()
+Utils.get_step(seq_id: int, run_id: str)
 ```
 
-In the end to summarize: _WorkFlow_ holds a list of _WorkGroup_ objects. _WorkGroup_ holds a list of _WorkExecFrame_. _WorkExecFrame_ holds a function, its parameters and output after execution.
+```yaml
+Parameters:
+    seq_id: int, position in the pipeline starting from 0
+    run_id: str, unique run id for this run context
+
+Returns:
+    - Resulting TaskConfig object for the function key given.
+    - None when function not found.
+```
+
+#### Example
+
+For example
+
+```python
+from hence import Utils
+
+@task()
+def function_name_1(**kwargs) -> int:
+  return 100
+
+@task()
+def function_name_2(mul, **kwargs):
+    run_id = ""
+
+    if "_META_" in kwargs:
+        run_id = kwargs["_META_"]["run_id"]
+
+    if len(run_id) != 0:
+    
+        # get step 0 result
+        fn_data = Utils.get_step(0, run_id)
+
+        return fn_data.result * mul
+
+# run all tasks
+task_keys = run_tasks(
+    [
+        (function_name_1, {})
+        (function_name_2, {"mul": 2}) # passing param
+    ]
+)
+
+# returns TaskConfig  from context
+task_inf = Utils.get_task(task_keys[1])
+
+# Contains task result when task is executed or None
+assert task_inf.result == 200
+```

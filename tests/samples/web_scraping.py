@@ -1,5 +1,5 @@
 """
-# A very minimal web scraping examples
+# A very minimal web scraping examples using class
 #
 # ----------------------------------------
 # Following code example SHOULD NOT be used
@@ -10,53 +10,55 @@
 import csv
 from urllib import request
 
-from hence import work, WorkGroup, WorkExecFrame, get_step_out
+from hence import Utils, task, run_tasks
 
 
-@work()
-def fetch_content(**kwargs) -> str:
+@task(title="Get the content")
+def fetch_content(**kwargs):
     """Fetch the content of example.org"""
 
     with request.urlopen("https://example.org/") as response:
         return response.read().hex()
 
 
-@work()
+@task(title="Parse the title of the content")
 def get_the_title(**kwargs) -> dict:
     """Parse the content in <title>"""
 
-    html = get_step_out(kwargs, "fetch_content")
-    html = bytes.fromhex(html).decode("utf-8")
+    run_id = kwargs["_META_"]["run_id"]
 
-    html.find("<h1>")
-    title = html[html.find("<h1>") + len("<h1>") : html.find("</h1>")]
-    body = html[html.find("<p>") + len("<p>") : html.find("</p>")]
+    if (html := Utils.get_step(0, run_id).result) is not None:
+        html = bytes.fromhex(html).decode("utf-8")
 
-    return dict(title=title, body=body)
+        html.find("<h1>")
+        title = html[html.find("<h1>") + len("<h1>") : html.find("</h1>")]
+        body = html[html.find("<p>") + len("<p>") : html.find("</p>")]
+
+        return dict(title=title, body=body)
+
+    return {}
 
 
-@work()
-def save_to_csv(**kwargs) -> str:
+@task(title="Save the content to csv")
+def save_to_csv(**kwargs) -> None:
     """save the content to csv"""
 
-    ret = get_step_out(kwargs, "get_the_title")
+    run_id = kwargs["_META_"]["run_id"]
 
-    with open("example.org-data.csv", "w+", encoding="utf-8") as csv_file:
-        writer = csv.writer(csv_file)
+    if (ret := Utils.get_step(1, run_id).result) is not None:
+        with open("example.org-data.csv", "w+", encoding="utf-8") as csv_file:
+            writer = csv.writer(csv_file)
 
-        writer.writerow(["title", "description"])
-        writer.writerow([ret["title"], ret["body"]])
+            writer.writerow(["title", "description"])
+            writer.writerow([ret["title"], ret["body"]])
 
 
-def test_main():
-    """main"""
+Utils.enable_logging(True)
 
-    grp = WorkGroup(
-        [
-            WorkExecFrame(id_="fetch_content", function=fetch_content),
-            WorkExecFrame(id_="get_the_title", function=get_the_title),
-            WorkExecFrame(id_="save_to_csv", function=save_to_csv),
-        ]
-    )
-
-    grp.execute_dag()
+run_tasks(
+    [
+        (fetch_content, {}),
+        (get_the_title, {}),
+        (save_to_csv, {}),
+    ]
+)

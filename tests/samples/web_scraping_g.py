@@ -10,11 +10,12 @@
 import csv
 from urllib import request
 
-from hence import hence_config, task, run_tasks
+from hence import Utils, group, run_group, task
 
-hence_config.enable_log = True
+mws = group("web_scraping")
 
 
+@mws
 @task(title="Get the content")
 def fetch_content(**kwargs):
     """Fetch the content of example.org"""
@@ -23,11 +24,12 @@ def fetch_content(**kwargs):
         return response.read().hex()
 
 
+@mws
 @task(title="Parse the title of the content")
 def get_the_title(**kwargs) -> dict:
     """Parse the content in <title>"""
 
-    if (html := hence_config.task("fetch_content").result) is not None:
+    if (html := Utils.get_step(0, "web_scraping").result) is not None:
         html = bytes.fromhex(html).decode("utf-8")
 
         html.find("<h1>")
@@ -39,11 +41,12 @@ def get_the_title(**kwargs) -> dict:
     return {}
 
 
+@mws
 @task(title="Save the content to csv")
-def save_to_csv(**kwargs) -> str:
+def save_to_csv(**kwargs) -> None:
     """save the content to csv"""
 
-    if (ret := hence_config.task("get_the_title").result) is not None:
+    if (ret := Utils.get_step(1, "web_scraping").result) is not None:
         with open("example.org-data.csv", "w+", encoding="utf-8") as csv_file:
             writer = csv.writer(csv_file)
 
@@ -51,10 +54,6 @@ def save_to_csv(**kwargs) -> str:
             writer.writerow([ret["title"], ret["body"]])
 
 
-run_tasks(
-    [
-        (fetch_content, {}),
-        (get_the_title, {}),
-        (save_to_csv, {}),
-    ]
-)
+Utils.enable_logging(True)
+
+run_group("web_scraping", [])

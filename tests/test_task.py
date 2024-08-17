@@ -1,7 +1,6 @@
 """Test @task()"""
 
-from icecream import ic
-from hence import hence_config, task, run_tasks, CTX_TI_BASE
+from hence import TaskConfig, Utils, _context, task, run_tasks, CTX_TI_BASE
 
 
 class TestTaskDecorator:
@@ -44,7 +43,7 @@ class TestTaskDecorator:
 
         sample_task(tag="tag1")
 
-        task_obj = hence_config.context_search(CTX_TI_BASE, "sample_task")
+        task_obj = _context.context_get(CTX_TI_BASE, "sample_task")
 
         assert task_obj == "sample_task title"
 
@@ -72,7 +71,7 @@ class TestRunTask:
         )
 
         for run_it in run_sequence:
-            fc = hence_config.task(run_it)
+            fc = Utils.get_task(run_it)
             assert fc.function.__name__ == fc.result
 
     @staticmethod
@@ -83,7 +82,7 @@ class TestRunTask:
         def task_1(**kwargs):
             return_stmt = task_1.__name__
 
-            if len(kwargs):
+            if "var1" in kwargs and "var2" in kwargs:
                 return_stmt += f' {kwargs["var1"]}, {kwargs["var2"]}'
 
             return return_stmt
@@ -95,17 +94,17 @@ class TestRunTask:
             ]
         )
 
-        fc = hence_config.task(run_sequence[0])
+        fc = Utils.get_task(run_sequence[0])
         assert fc.function.__name__ == fc.result
 
-        fc = hence_config.task(run_sequence[1])
+        fc = Utils.get_task(run_sequence[1])
         assert "task_1 Hello, World" == fc.result
 
     @staticmethod
     def test_run_tasks_pass_with_replace_title():
         """test run tasks pass with replace title"""
 
-        @task(title="task_1-{fn_key}")
+        @task(title="task_1-{fn_task_key}")
         def task_1(**kwargs):
             return task_1.__name__
 
@@ -125,11 +124,124 @@ class TestRunTask:
             ]
         )
 
-        fc = hence_config.task(run_sequence[0])
-        assert "task_1-task_1.0" == fc.title
+        fc = Utils.get_task(run_sequence[0])
+        assert f"task_1-{run_sequence[0]}" == fc.title
 
-        fc = hence_config.task(run_sequence[1])
-        assert "task_2-" == fc.title
+        _, run_id = run_sequence[1].split(".", 1)
+        fc = Utils.get_task(run_sequence[1])
+        assert f"task_2-{run_id}" == fc.title
 
-        fc = hence_config.task(run_sequence[2])
-        assert "task_3-2" == fc.title
+        seq_id, _ = run_sequence[2].split(".", 1)
+        fc = Utils.get_task(run_sequence[2])
+        assert f"task_3-{seq_id}" == fc.title
+
+    @staticmethod
+    def test_run_tasks_pass_with_multiple_run_tasks():
+        """test run tasks pass with multiple run tasks"""
+
+        @task(title="task_1-{fn_task_key}")
+        def task_1(**kwargs):
+            return task_1.__name__
+
+        @task(title="task_2-{fn_run_id}")
+        def task_2(**kwargs):
+            return task_2.__name__
+
+        @task(title="task_3-{fn_seq_id}")
+        def task_3(**kwargs):
+            return task_2.__name__
+
+        run_sequence = run_tasks(
+            [
+                (task_1, {}),
+                (task_2, {}),
+                (task_3, {}),
+            ],
+        )
+
+        fc = Utils.get_task(run_sequence[0])
+        assert f"task_1-{run_sequence[0]}" == fc.title
+
+        _, run_id = run_sequence[1].split(".", 1)
+        fc = Utils.get_task(run_sequence[1])
+        assert f"task_2-{run_id}" == fc.title
+
+        seq_id, _ = run_sequence[2].split(".", 1)
+        fc = Utils.get_task(run_sequence[2])
+        assert f"task_3-{seq_id}" == fc.title
+
+        @task(title="task_4-{fn_task_key}")
+        def task_4(**kwargs):
+            return task_4.__name__
+
+        @task(title="task_5-{fn_run_id}")
+        def task_5(**kwargs):
+            return task_5.__name__
+
+        @task(title="task_6-{fn_seq_id}")
+        def task_6(**kwargs):
+            return task_6.__name__
+
+        run_sequence = run_tasks(
+            [
+                (task_4, {}),
+                (task_5, {}),
+                (task_6, {}),
+            ]
+        )
+
+        fc = Utils.get_task(run_sequence[0])
+        assert f"task_4-{run_sequence[0]}" == fc.title
+
+        _, run_id = run_sequence[1].split(".", 1)
+        fc = Utils.get_task(run_sequence[1])
+        assert f"task_5-{run_id}" == fc.title
+
+        seq_id, _ = run_sequence[2].split(".", 1)
+        fc = Utils.get_task(run_sequence[2])
+        assert f"task_6-{seq_id}" == fc.title
+
+
+class TestUtils:
+    """TestUtils"""
+
+    @staticmethod
+    def test_get_task_pass():
+        """test with task key pass"""
+
+        @task(title="task_4-{fn_task_key}")
+        def task_4(**kwargs):
+            return task_4.__name__
+
+        run_sequence = run_tasks([(task_4, {})])
+
+        fc = Utils.get_task(run_sequence[0])
+        assert isinstance(fc, TaskConfig)
+
+    @staticmethod
+    def test_get_step_pass():
+        """test with task key pass"""
+
+        @task()
+        def task_3(**kwargs):
+            return "task_3"
+
+        @task()
+        def task_4(**kwargs):
+            dct = kwargs["_META_"]
+
+            if "current_step" in dct and "run_id" in dct:
+                step_0 = Utils.get_step(0, dct["run_id"])
+
+                return f'{step_0.result}.{dct["current_step"]}.{dct["run_id"]}'
+
+        run_sequence = run_tasks(
+            [
+                (task_3, {}),
+                (task_4, {"var": {"a": 1, "c": 3}}),
+            ],
+            "test_get_step_pass",
+        )
+
+        fc = Utils.get_task(run_sequence[1])
+        assert fc.result == "task_3.1.test_get_step_pass"
