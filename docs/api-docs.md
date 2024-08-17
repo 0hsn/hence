@@ -20,7 +20,7 @@ A decorator, to create a task based minimal workflow. Task represents smallest u
 
 Task can be created using `@task()` decorator.
 
-Here is [web scraper](../tests/samples/web_scraping_2.py) implemented.
+Here is [web scraper](../tests/samples/web_scraping.py) implemented.
 
 #### Parameters
 
@@ -184,7 +184,7 @@ def some_task_2(**kwargs): ...
 
 Now `some_task_1` and `some_task_2` added to the group `do_something`.
 
-Here is [web scraper](../tests/samples/web_scraping_2.py) implemented.
+Here is [web scraper](../tests/samples/web_scraping_g.py) implemented.
 
 #### Signature
 
