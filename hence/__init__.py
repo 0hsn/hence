@@ -7,12 +7,11 @@ from collections import UserDict
 from contextvars import ContextVar
 from functools import wraps, cached_property
 from itertools import zip_longest
-import logging
-import sys
 from types import FunctionType
 from typing import Any, NamedTuple, Protocol, Union
 import uuid
 
+from loguru import logger
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 
 
@@ -21,6 +20,11 @@ CTX_FN_BASE = "func"
 CTX_GR_BASE = "group"
 CTX_RL_BASE = "runs"
 CTX_TI_BASE = "title"
+
+# logger setup
+log_debug = logger.debug
+log_info = logger.info
+log_error = logger.error
 
 
 class TitleConfig(NamedTuple):
@@ -95,7 +99,7 @@ class TaskConfig:
                     fn_seq_id=self.seq_id,
                 )
             except KeyError as e:
-                _logger.log(_logger.ERROR, "`%s` not found in task.title.", str(e))
+                log_error(f"`{e}` not found in task.title.")
                 raise e
 
             self.title = t_title
@@ -159,56 +163,6 @@ class Utils:
 
         return TaskConfig.from_task_key(task_key)
 
-    @staticmethod
-    def enable_logging(enable: bool = False) -> None:
-        """Enable logging"""
-
-        _logger.enable_logging = enable
-
-
-class HenceLogger:
-    """HenceLogger"""
-
-    DEBUG = "debug"
-    ERROR = "error"
-
-    def __init__(self):
-        """Loads or reloads logger"""
-
-        self.logger = logging.getLogger("hence")
-        self.enable_logging = False
-
-        self._setup_logger_()
-
-    def _setup_logger_(self):
-        """setup logger"""
-
-        stderr_log_formatter = logging.Formatter(
-            "%(name)s :: %(levelname)s :: "
-            + "(P)%(process)d/(Th)%(thread)d :: "
-            + "%(message)s"
-        )
-
-        stdout_log_handler = logging.StreamHandler(stream=sys.stderr)
-        stdout_log_handler.setLevel(logging.NOTSET)
-        stdout_log_handler.setFormatter(stderr_log_formatter)
-
-        self.logger.addHandler(stdout_log_handler)
-        self.logger.setLevel(logging.DEBUG)
-
-    def log(self, level: str, message: str, *args) -> None:
-        """Final logging function"""
-
-        if not self.enable_logging:
-            return
-
-        if level not in (self.DEBUG, self.ERROR):
-            raise SystemError("Invalid log type.")
-
-        self.logger.log(
-            logging.DEBUG if level == _logger.DEBUG else logging.ERROR, message, *args
-        )
-
 
 class HenceContext:
     """Hence configuration class"""
@@ -255,6 +209,8 @@ class HenceContext:
             context_val = self.context.get()
             context_val[CTX_TI_BASE][obj.task_key] = obj.title
 
+            log_debug(f"TitleConfig: obj = {obj}.")
+
         elif isinstance(obj, GroupConfig):
             context_val = self.context.get()
 
@@ -263,15 +219,19 @@ class HenceContext:
             else:
                 context_val[CTX_GR_BASE][obj.title].append(obj.function)
 
+            log_debug(f"GroupConfig: obj = {obj}.")
+
         elif isinstance(obj, RunContext):
             context_val = self.context.get()
 
             if "run_context_id" in kwargs:
                 context_val[CTX_RL_BASE][kwargs["run_context_id"]] = obj
+                log_debug(f"RunContext: obj = {obj}.")
             else:
+                log_error("`kwargs[run_context_id]` not found.")
                 raise ValueError("`run_context_id` not found.")
 
-        _logger.log(_logger.DEBUG, "Context:: %s.", self.context)
+        log_info("Add context successful.")
 
     def context_get(self, key: str, obj_key: str = "") -> Any:
         """Get from context"""
@@ -279,23 +239,18 @@ class HenceContext:
         context_val = self.context.get()
 
         if key not in context_val:
-            _logger.log(_logger.ERROR, "Object with key: `%s` not found.", key)
+            log_error(f"Object with key: `{key}` not found.")
             raise KeyError(f"Object with key: `{key}` not found.")
 
         if obj_key and obj_key not in context_val[key]:
-            _logger.log(_logger.ERROR, "Object with key: `%s` not found.", obj_key)
+            log_error(f"Object with key: `{obj_key}` not found.")
             raise KeyError(f"Object with key: `{obj_key}` not found.")
 
         ret_value = context_val[key][obj_key] if obj_key else context_val[key]
-
-        _logger.log(
-            _logger.DEBUG, " :: context_get ::`%s` for %s.%s.", ret_value, key, obj_key
-        )
+        log_debug(f" :: context_get ::`{ret_value}` for {key}.{obj_key}.")
 
         return ret_value
 
-
-_logger = HenceLogger()
 
 _context = HenceContext()
 
@@ -306,6 +261,7 @@ def group(group_id: str) -> Any:
     group_lst = _context.context_get(CTX_GR_BASE)
 
     if group_id in group_lst:
+        log_error(f"`{group_id}` exists already.")
         raise ValueError(f"`{group_id}` exists already.")
 
     def _internal(fn: FunctionType):
@@ -325,24 +281,20 @@ def task(title: str = None) -> Any:
         t_title = title if title else function.__name__
 
         # save function title to context
-        _logger.log(_logger.DEBUG, "title `%s` registered.", t_title)
+        log_debug(f"title `{t_title}` registered.")
 
         t_conf = TitleConfig(function.__name__, t_title)
         _context.context_add(t_conf)
 
         if "kwargs" not in function.__code__.co_varnames:
-            _logger.log(
-                _logger.ERROR, "Missing `**kwargs` in %s args.", function.__name__
-            )
-            raise TypeError(f"Missing `**kwargs` in {function.__name__} args.")
+            log_error(f"Missing `{function.__name__}(.., **kwargs)`.")
+            raise TypeError(f"Missing `{function.__name__}(.., **kwargs)`.")
 
         @wraps(function)
         def _decorator(**kwargs: dict) -> Any:
             """decorator"""
 
-            _logger.log(
-                _logger.DEBUG, "`%s` called with %s.", function.__name__, kwargs
-            )
+            log_debug(f"`{function.__name__}` called with {kwargs}.")
             return function(**kwargs)
 
         return _decorator
@@ -360,13 +312,11 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
         run_id = str(uuid.uuid4())
 
     for index, fn_config_tpl in enumerate(fn_config_list):
-        _logger.log(_logger.DEBUG, "`run_tasks` :: %s", fn_config_tpl)
+        log_debug(f"`run_tasks` :: {fn_config_tpl}")
 
         if len(fn_config_tpl) > 2:
-
-            raise ValueError(
-                f"Only function and parameters are allowed in `{run_tasks.__name__}`"
-            )
+            log_error("Not allowed extra values in `fn_config_list`")
+            raise ValueError("Not allowed extra values in `fn_config_list`")
 
         fn_config = TaskConfig(sid=str(index), rid=run_id, *fn_config_tpl)
 
@@ -376,7 +326,7 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
         fn_list.append(fn_config.task_key)
 
     if not fn_list:
-        _logger.log(_logger.ERROR, "`fn_list` does not contain any `@task`.")
+        log_error("`fn_list` does not contain any `@task`.")
         raise TypeError("`fn_list` does not contain any `@task`.")
 
     return execute_dag(
@@ -462,9 +412,7 @@ class FunctionTypeExecutor:
             rlc[task_cfg.task_key] = task_cfg
             RunContextSupport.to_context(rlc, run_context_id)
 
-        _logger.log(
-            _logger.DEBUG, "`%s::%s` is executing.", task_cfg.title, task_cfg.task_key
-        )
+        log_debug(f"`{task_cfg.title}::{task_cfg.task_key}` is executing.")
 
         task_cfg.parameters |= {
             "_META_": {"run_id": run_context_id, "current_step": curr_step}
