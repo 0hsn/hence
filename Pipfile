@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 paradag = "*"
+pydantic = "*"
+loguru = "*"
 
 [dev-packages]
 mypy = "*"
