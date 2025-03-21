@@ -22,11 +22,12 @@ Task can be created using `@task()` decorator.
 
 Here is [web scraper](../tests/samples/web_scraping.py) implemented.
 
-#### Parameters
+#### `@task()` function
 
-`title` String type. Represents the title of the task. Title can contain following:
+`title` String type. Represents the title of the task.
+  Title can include following variables,
 
-  `fn_task_key` adds the task key, <br>
+  `fn_task_key` unique task identifier, <br>
   `fn_name` name of the function, <br>
   `fn_run_id` the run context id, <br>
   `fn_seq_id` the sequence number for as specific run, <br>
@@ -61,7 +62,7 @@ def fn_1(**kwargs):
 fn_1(var1=1, val2="sample string")
 ```
 
-This can be similarly written as,
+This can be also written as,
 
 ```python
 @task()
@@ -72,11 +73,11 @@ def fn_1(var1, val2, **kwargs):
 fn_1(var1=1, val2="sample string")
 ```
 
-### Run tasks in pipeline
+### Run tasks in a pipeline
 
-You can run multiple tasks one after another forming a pipeline using `run_tasks()` function.
+It is possible to run multiple tasks sequentially, one after another, in a pipeline using `run_tasks()` function.
 
-#### Signature
+#### `run_tasks()` function
 
 ```python
 def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]
