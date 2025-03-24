@@ -119,7 +119,7 @@ def task_2(ctx, param1, param2)
   ctx.parameters["task_1"]
   ctx.sequence
 
-pipeline.readd_task("task_3", task_1, pass_ctx=true)
+pipeline.re_add_task("task_3", task_1, pass_ctx=true)
 
 @pipeline.add_task()
 def task_4(param1, param2)
