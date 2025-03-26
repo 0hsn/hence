@@ -6,13 +6,18 @@ from __future__ import annotations
 from collections import UserDict
 from contextvars import ContextVar
 from functools import wraps, cached_property
+import functools
 from itertools import zip_longest
 from types import FunctionType
+import types
 from typing import Any, NamedTuple, Protocol, Union
+import typing
 import uuid
 
+import icecream
 from loguru import logger
 from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
+from pydantic import BaseModel, Field
 
 
 CTX_NAME = "hence_context"
@@ -329,9 +334,7 @@ def run_tasks(fn_config_list: list[tuple], run_id: str = "") -> list[str]:
         log_error("`fn_list` does not contain any `@task`.")
         raise TypeError("`fn_list` does not contain any `@task`.")
 
-    return execute_dag(
-        setup_dag(fn_list), SequentialProcessor(), FunctionTypeExecutor()
-    )
+    return execute_dag(setup_dag(fn_list), FunctionTypeExecutor())
 
 
 def run_group(group_id: str, task_params: list[dict]) -> Any:
@@ -368,7 +371,6 @@ def setup_dag(vertices: list) -> DAG:
 
 def execute_dag(
     dag: DAG,
-    ps: Union[SequentialProcessor, MultiThreadProcessor],
     ex: ExecutorContract,
 ) -> list:
     """Execute the dag"""
@@ -376,7 +378,7 @@ def execute_dag(
     if not isinstance(dag, DAG):
         raise TypeError(f"Not a DAG. type: {type(dag)}")
 
-    return dag_run(dag, processor=ps, executor=ex)
+    return dag_run(dag, processor=SequentialProcessor(), executor=ex)
 
 
 class ExecutorContract(Protocol):
@@ -433,3 +435,92 @@ class FunctionTypeExecutor:
 
         rlc[task_cfg.task_key] = task_cfg
         RunContextSupport.to_context(rlc, run_context_id)
+
+
+class PipelineContext(BaseModel):
+    """Holds pipeline internal data"""
+
+    result: dict[str, typing.Any] = Field(default_factory=dict)
+    parameters: dict[str, dict[str, typing.Any]] = Field(default_factory=dict)
+    sequence: list[str] = Field(default_factory=list)
+    functions: dict[str, typing.Callable] = Field(default_factory=dict)
+
+
+class Pipeline(BaseModel):
+    """Base Pipeline utility class"""
+
+    context: PipelineContext = Field(default_factory=PipelineContext)
+
+    def add_task(
+        self, uid: typing.Optional[str] = None, pass_ctx: bool = False
+    ) -> typing.Any:
+        """Add a task to pipeline
+
+        Args:
+            uid (str): Unique Id for the decorated function.
+                This is an optional field. In case of no
+                values passed function name to be used.
+            pass_ctx (bool): Should pass the PipelineContext
+                or not. Default false. Task function's 1st param is
+                expected to be PipelineContext.
+        Returns:
+            Decorator: Any
+        """
+
+        def _internal(function: types.FunctionType):
+            # if "kwargs" not in function.__code__.co_varnames:
+
+            if pass_ctx and function.__code__.co_argcount == 0:
+                raise AttributeError(
+                    "pass_ctx is True, but function have no parameter."
+                )
+
+            if function.__code__.co_varnames[0] in function.__annotations__:
+                if not issubclass(
+                    function.__annotations__[function.__code__.co_varnames[0]],
+                    PipelineContext,
+                ):
+                    raise AttributeError(
+                        "If pass_ctx is True, function's 1st parameter MUST"
+                        " have PipelineContext type annotation, or no type annotation"
+                    )
+
+            fn_name = uid if uid else function.__code__.co_name
+
+            self.context.functions[fn_name] = function
+
+            if fn_name not in self.context.sequence:
+                self.context.sequence.append(fn_name)
+
+            icecream.ic(self.context)
+
+            @functools.wraps(function)
+            def _decorator(**kwargs: dict) -> typing.Any:
+                """decorator"""
+
+                return function(**kwargs)
+
+            return _decorator
+
+        return _internal
+
+    def re_add_task(self): ...
+
+    def run(self):
+        """Run a pipeline"""
+
+        execute_dag(
+            setup_dag(list(self.context.functions.values())),
+            FunctionTypeExecutor(),
+        )
+
+    def parameter(self, **kwargs) -> typing.Self:
+        """Pass parameter to a task"""
+
+        for key in kwargs.keys():
+            if key not in self.context.sequence:
+                raise KeyError(f"task uid `{key}` not registered.")
+
+            self.context.parameters[key] = kwargs[key]
+
+        return self
