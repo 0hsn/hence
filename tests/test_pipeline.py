@@ -1,6 +1,5 @@
 """Tests for Pipeline"""
 
-import icecream
 import pytest
 from hence import Pipeline, PipelineContext
 
@@ -84,5 +83,27 @@ class TestPipelineAddTask:
         def function_1(ctx, a: str):
             return function_1.__name__
 
+
 class TestPipelineRun:
-    
+    @staticmethod
+    def test_pass(capsys):
+        pipeline = Pipeline()
+
+        @pipeline.add_task(pass_ctx=True)
+        def function_1(ctx, a: str):
+            return a
+
+        @pipeline.add_task(pass_ctx=True)
+        def function_2(ctx, b: str):
+            print(b)
+
+        pipeline.parameter(function_1={"a": "String"})
+        pipeline.parameter(function_2={"b": "StringB"})
+
+        result = pipeline.run()
+        captured = capsys.readouterr()
+
+        assert len(result) == 2
+        assert result["function_1"] == "String"
+        assert not result["function_2"]
+        assert "StringB" in captured.out
