@@ -1,6 +1,4 @@
-"""
-Hence
-"""
+"""Hence"""
 
 from __future__ import annotations
 import functools
@@ -91,7 +89,7 @@ class Pipeline(BaseModel):
     def add_task(
         self, uid: typing.Optional[str] = None, pass_ctx: bool = False
     ) -> typing.Any:
-        """Add a task to pipeline"""
+        """Add a task to pipeline [decorator]."""
 
         def _internal(function: types.FunctionType):
             # if "kwargs" not in function.__code__.co_varnames:
