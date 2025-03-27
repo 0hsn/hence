@@ -3,20 +3,11 @@ Hence
 """
 
 from __future__ import annotations
-from collections import UserDict
-from contextvars import ContextVar
-from functools import wraps, cached_property
 import functools
-from itertools import zip_longest
-from types import FunctionType
 import types
-from typing import Any, NamedTuple, Protocol, Union
 import typing
-import uuid
 
-import icecream
-from loguru import logger
-from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
+from paradag import DAG, SequentialProcessor, dag_run
 from pydantic import BaseModel, Field
 
 
@@ -46,13 +37,13 @@ def execute_dag(
     return dag_run(dag, processor=SequentialProcessor(), executor=exc)
 
 
-class ExecutorContract(Protocol):
+class ExecutorContract(typing.Protocol):
     """Interface for Executor"""
 
-    def param(self, vertex) -> Any:
+    def param(self, vertex) -> typing.Any:
         """Have param"""
 
-    def execute(self, __work) -> Any:
+    def execute(self, __work) -> typing.Any:
         """Can execute"""
 
     def report_finish(self, vertices_result):
@@ -66,12 +57,12 @@ class FunctionExecutor:
         assert isinstance(ctx, PipelineContext)
         self.context: PipelineContext = ctx
 
-    def param(self, vertex: Any) -> Any:
+    def param(self, vertex: typing.Any) -> typing.Any:
         """Selecting parameters"""
 
         return vertex
 
-    def execute(self, uid: str) -> Any:
+    def execute(self, uid: str) -> typing.Any:
         """Execute node of the dag"""
 
         _function = self.context.functions[uid]
