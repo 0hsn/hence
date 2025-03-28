@@ -101,7 +101,7 @@ class Pipeline(BaseModel):
                     "pass_ctx is True, but function have no parameter."
                 )
 
-            if func_args_count > 0:
+            if pass_ctx and func_args_count > 0:
                 first_param = function.__code__.co_varnames[0]
 
                 if first_param in function.__annotations__:
