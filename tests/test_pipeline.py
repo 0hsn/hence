@@ -109,3 +109,25 @@ class TestPipelineRun:
         assert result["function_1"] == "String"
         assert not result["function_2"]
         assert "StringB" in captured.out
+
+
+class TestPipelineReAddTask:
+    @staticmethod
+    def test_pass():
+        def fn_1(a: int) -> int:
+            return a + 10
+
+        def fn_2(a: int) -> int:
+            return a - 10
+
+        pipeline = Pipeline()
+        pipeline.re_add_task(fn_1, "add_ten")
+        pipeline.re_add_task(fn_2, "sub_ten")
+
+        pipeline.parameter(add_ten={"a": 10})
+        pipeline.parameter(sub_ten={"a": 10})
+
+        resp = pipeline.run()
+
+        assert resp["add_ten"] == 20
+        assert resp["sub_ten"] == 0

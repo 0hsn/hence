@@ -6,7 +6,7 @@ import types
 import typing
 
 from paradag import DAG, SequentialProcessor, dag_run
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validate_call
 
 
 def setup_dag(vertices: list) -> DAG:
@@ -92,38 +92,7 @@ class Pipeline(BaseModel):
         """Add a task to pipeline [decorator]."""
 
         def _internal(function: types.FunctionType):
-            # if "kwargs" not in function.__code__.co_varnames:
-
-            func_args_count = function.__code__.co_argcount
-
-            if pass_ctx and func_args_count == 0:
-                raise AttributeError(
-                    "pass_ctx is True, but function have no parameter."
-                )
-
-            if pass_ctx and func_args_count > 0:
-                first_param = function.__code__.co_varnames[0]
-
-                if first_param in function.__annotations__:
-                    if not issubclass(
-                        function.__annotations__[first_param],
-                        PipelineContext,
-                    ):
-                        raise AttributeError(
-                            "If pass_ctx is True, function's 1st parameter MUST"
-                            " have PipelineContext type annotation, or no type annotation"
-                        )
-
-            fn_name = uid if uid else function.__code__.co_name
-
-            self.context.functions[fn_name] = function
-
-            if fn_name not in self.context.sequence:
-                self.context.sequence.append(fn_name)
-
-            self.context.parameters[fn_name] = (
-                {first_param: self.context} if pass_ctx else {}
-            )
+            self.re_add_task(function, uid, pass_ctx)
 
             @functools.wraps(function)
             def _decorator(**kwargs: dict) -> typing.Any:
@@ -135,7 +104,43 @@ class Pipeline(BaseModel):
 
         return _internal
 
-    def re_add_task(self): ...
+    @validate_call
+    def re_add_task(
+        self,
+        function: typing.Callable,
+        uid: typing.Optional[str] = None,
+        pass_ctx: bool = False,
+    ):
+        """Add a task to pipeline."""
+
+        func_args_count = function.__code__.co_argcount
+
+        if pass_ctx and func_args_count == 0:
+            raise AttributeError("pass_ctx is True, but function have no parameter.")
+
+        if pass_ctx and func_args_count > 0:
+            first_param = function.__code__.co_varnames[0]
+
+            if first_param in function.__annotations__:
+                if not issubclass(
+                    function.__annotations__[first_param],
+                    PipelineContext,
+                ):
+                    raise AttributeError(
+                        "If pass_ctx is True, function's 1st parameter MUST"
+                        " have PipelineContext type annotation, or no type annotation"
+                    )
+
+        fn_name = uid if uid else function.__code__.co_name
+
+        self.context.functions[fn_name] = function
+
+        if fn_name not in self.context.sequence:
+            self.context.sequence.append(fn_name)
+
+        self.context.parameters[fn_name] = (
+            {first_param: self.context} if pass_ctx else {}
+        )
 
     def run(self) -> dict[str, typing.Any]:
         """Run a pipeline"""
