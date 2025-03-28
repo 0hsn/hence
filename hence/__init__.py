@@ -94,22 +94,25 @@ class Pipeline(BaseModel):
         def _internal(function: types.FunctionType):
             # if "kwargs" not in function.__code__.co_varnames:
 
-            if pass_ctx and function.__code__.co_argcount == 0:
+            func_args_count = function.__code__.co_argcount
+
+            if pass_ctx and func_args_count == 0:
                 raise AttributeError(
                     "pass_ctx is True, but function have no parameter."
                 )
 
-            first_param = function.__code__.co_varnames[0]
+            if func_args_count > 0:
+                first_param = function.__code__.co_varnames[0]
 
-            if first_param in function.__annotations__:
-                if not issubclass(
-                    function.__annotations__[first_param],
-                    PipelineContext,
-                ):
-                    raise AttributeError(
-                        "If pass_ctx is True, function's 1st parameter MUST"
-                        " have PipelineContext type annotation, or no type annotation"
-                    )
+                if first_param in function.__annotations__:
+                    if not issubclass(
+                        function.__annotations__[first_param],
+                        PipelineContext,
+                    ):
+                        raise AttributeError(
+                            "If pass_ctx is True, function's 1st parameter MUST"
+                            " have PipelineContext type annotation, or no type annotation"
+                        )
 
             fn_name = uid if uid else function.__code__.co_name
 
@@ -154,7 +157,7 @@ class Pipeline(BaseModel):
             raise KeyError(f"task uid `{_key}` not registered.")
 
         if not isinstance(kwargs[_key], dict):
-            raise ValueError("Only pass a dict containing param name as key.")
+            raise ValueError("Pass dict having parameters name as key.")
 
         self.context.parameters[_key] |= kwargs[_key]
 

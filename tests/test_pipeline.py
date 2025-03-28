@@ -12,15 +12,17 @@ class TestPipelineParameter:
         p = Pipeline()
 
         with pytest.raises(KeyError):
-            p.parameter(a_param=21)
+            p.parameter(a_param={"var": 21})
 
     @staticmethod
     def test_parameter_pass():
         p = Pipeline()
-        p.context.sequence = ["a_param"]
+        @p.add_task()
+        def a_param():
+            ...
 
-        assert isinstance(p.parameter(a_param=21), Pipeline)
-        assert p.context.parameters["a_param"] == 21
+        assert isinstance(p.parameter(a_param={"var": 21}), Pipeline)
+        assert p.context.parameters["a_param"] == {"var": 21}
 
     @staticmethod
     def test_fails_for_unregister_function():
