@@ -30,6 +30,7 @@ paradag = "^1.2.0"
 pytest = "^8.3.5"
 ruff = "^0.11.2"
 icecream = "^2.1.4"
+loguru = "^0.7.3"
 
 [build-system]
 requires = ["poetry-core"]
