@@ -197,9 +197,8 @@ PipelineContext is a class that holds all the operation data for a certain [Pipe
 
 ## Contributions
 
-- Read [CONTRIBUTING](./docs/CONTRIBUTING) document before you contribute.
+- Read [CONTRIBUTING](./CONTRIBUTING) document before you contribute.
 - [Create issues](https://github.com/0hsn/hence/issues) for any questions or request
-
 ---
 
 Licensed under [AGPL-3.0](./LICENSE)
