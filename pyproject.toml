@@ -1,11 +1,15 @@
-[project]
+[tool.poetry]
 name = "hence"
-version = "0.10.1"
-authors = [{ name = "Mahmudul Hasan", email = "hasanlock@gmail.com" }]
+version = "0.11.0"
 description = "Hence, a powerful framework designed to streamline data pipeline, scraping, automation workflow orchestration."
+authors = ["HSN <hasanlock@gmail.com>"]
+license = "AGPL"
 readme = "README.md"
-requires-python = ">=3.11"
-license = { file = "LICENSE" }
+
+homepage = "https://github.com/0hsn/hence"
+repository = "https://github.com/0hsn/hence"
+documentation = "https://github.com/0hsn/hence"
+
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -15,11 +19,19 @@ classifiers = [
   "Topic :: Software Development :: Libraries",
   "Topic :: Utilities",
 ]
-dependencies = ["paradag==1.2.0"]
-[project.urls]
-Homepage = "https://github.com/0hsn/hence"
-Issues = "https://github.com/0hsn/hence/issues"
+
+[tool.poetry.dependencies]
+python = "3.11.x"
+pydantic = "^2.10.6"
+paradag = "^1.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+ruff = "^0.11.2"
+icecream = "^2.1.4"
+loguru = "^0.7.3"
 
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
