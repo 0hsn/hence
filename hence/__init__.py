@@ -110,7 +110,7 @@ class Pipeline(BaseModel):
         function: typing.Callable,
         uid: typing.Optional[str] = None,
         pass_ctx: bool = False,
-    ):
+    ) -> None:
         """Add a task to pipeline."""
 
         func_args_count = function.__code__.co_argcount
