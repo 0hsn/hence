@@ -1,36 +1,41 @@
-[tool.poetry]
+[project]
 name = "hence"
 version = "0.11.0"
 description = "Hence, a powerful framework designed to streamline data pipeline, scraping, automation workflow orchestration."
-authors = ["HSN <hasanlock@gmail.com>"]
-license = "AGPL"
+
+authors = [{name = "HSN", email = "hasanlock@gmail.com"}]
+license = { text = "AGPL-3.0-or-later" }
 readme = "README.md"
 
-homepage = "https://github.com/0hsn/hence"
-repository = "https://github.com/0hsn/hence"
-documentation = "https://github.com/0hsn/hence"
-
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: GNU Affero General Public License v3",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Libraries",
   "Topic :: Utilities",
 ]
 
-[tool.poetry.dependencies]
-python = "3.11.x"
-pydantic = "^2.10.6"
-paradag = "^1.2.0"
+requires-python = ">=3.11,<3.14"
 
+[tool.poetry.dependencies]
+pydantic = "^2.11"
+paradag = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
 ruff = "^0.11.2"
 icecream = "^2.1.4"
 loguru = "^0.7.3"
+
+[project.urls]
+Homepage = "https://github.com/0hsn/hence"
+Documentation = "https://github.com/0hsn/hence"
+Repository = "https://github.com/0hsn/hence"
+Issues = "https://github.com/0hsn/hence/issues"
 
 [build-system]
 requires = ["poetry-core"]
