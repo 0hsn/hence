@@ -5,7 +5,7 @@ import functools
 import types
 import typing
 
-from paradag import DAG, SequentialProcessor, dag_run
+from paradag import DAG, SequentialProcessor, MultiThreadProcessor, dag_run
 from pydantic import BaseModel, Field, validate_call
 
 
@@ -25,14 +25,25 @@ def setup_dag(vertices: list) -> DAG:
 
 def execute_dag(
     dag: DAG,
-    exc: ExecutorContract,
+    _executor: ExecutorContract,
+    _operation: typing.Annotated[
+        str, typing.Literal["sequential", "parallel"]
+    ] = "sequential",
 ) -> list:
     """Execute the dag"""
 
     if not isinstance(dag, DAG):
         raise TypeError(f"Not a DAG. type: {type(dag)}")
 
-    return dag_run(dag, processor=SequentialProcessor(), executor=exc)
+    match _operation:
+        case "sequential":
+            _processor = SequentialProcessor()
+        case "parallel":
+            _processor = MultiThreadProcessor()
+        case _:
+            raise ValueError("Unacceptable _operation value")
+
+    return dag_run(dag, processor=_processor, executor=_executor)
 
 
 class ExecutorContract(typing.Protocol):
@@ -142,10 +153,14 @@ class Pipeline(BaseModel):
             {first_param: self.context} if pass_ctx else {}
         )
 
-    def run(self) -> dict[str, typing.Any]:
+    def run(self, is_parallel: bool = False) -> dict[str, typing.Any]:
         """Run a pipeline"""
 
-        execute_dag(setup_dag(self.context.sequence), FunctionExecutor(self.context))
+        execute_dag(
+            setup_dag(self.context.sequence),
+            FunctionExecutor(self.context),
+            "parallel" if is_parallel else "sequential",
+        )
 
         return self.context.result
 
