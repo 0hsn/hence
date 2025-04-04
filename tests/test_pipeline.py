@@ -110,6 +110,29 @@ class TestPipelineRun:
         assert not result["function_2"]
         assert "StringB" in captured.out
 
+    @staticmethod
+    def test_pass_parallel(capsys):
+        pipeline = Pipeline()
+
+        @pipeline.add_task(pass_ctx=True)
+        def function_1(ctx, a: str):
+            return a
+
+        @pipeline.add_task(pass_ctx=True)
+        def function_2(ctx, b: str):
+            print(b)
+
+        pipeline.parameter(function_1={"a": "String"})
+        pipeline.parameter(function_2={"b": "StringB"})
+
+        result = pipeline.run(True)
+        captured = capsys.readouterr()
+
+        assert len(result) == 2
+        assert result["function_1"] == "String"
+        assert not result["function_2"]
+        assert "StringB" in captured.out
+
 
 class TestPipelineReAddTask:
     @staticmethod
