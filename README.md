@@ -25,8 +25,22 @@ By orchestrating these units sequentially, _Hence_ empowers you to focus on the 
 
 ### Use as library
 
+#### Install from Pypi
+
+```shell
+pip install -U hence
+```
+
+#### Install from Github
+
 ```shell
 pip install -U git+https://github.com/0hsn/hence.git@main
+```
+
+or a specific tag
+
+```shell
+pip install -U git+https://github.com/0hsn/hence.git@v0.11.0
 ```
 
 ### Development setup
