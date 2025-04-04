@@ -158,8 +158,11 @@ Run the pipeline.
 ##### Signature
 
 ```python
-def run(self) -> dict[str, typing.Any]
+def run(self, is_parallel: bool = False) -> dict[str, typing.Any]:
 ```
+##### Parameters
+
+`is_parallel: bool` Optional. To run added tasks in parallel.
 
 ##### Example
 
@@ -174,6 +177,9 @@ pipeline.re_add_task(function_1, pass_ctx=True)
 pipeline.re_add_task(function_2, uid="r_func")
 
 output = pipeline.run()
+
+# or in parallel, since these tasks are not dependent
+output = pipeline.run(True)
 ```
 
 This function outputs a dictionary containing all function returns, by function name or uid (if used).
