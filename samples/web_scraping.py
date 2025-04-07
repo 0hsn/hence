@@ -20,16 +20,14 @@ def fetch_content():
     """Fetch the content of example.org"""
 
     with request.urlopen("https://example.org/") as response:
-        return response.read().hex()
+        return response.read().decode('utf-8')
 
 
 @pipeline.add_task(pass_ctx=True)
 def get_the_title(ctx: PipelineContext) -> dict:
-    """Parse the content in <title>"""
+    """Parse the content in <title>"""  
 
     if (html := ctx.result["fetch_content"]) is not None:
-        html = bytes.fromhex(html).decode("utf-8")
-        html.find("<h1>")
         title = html[html.find("<h1>") + len("<h1>") : html.find("</h1>")]
         body = html[html.find("<p>") + len("<p>") : html.find("</p>")]
 
