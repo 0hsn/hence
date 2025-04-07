@@ -28,7 +28,6 @@ def get_the_title(ctx: PipelineContext) -> dict:
     """Parse the content in <title>"""  
 
     if (html := ctx.result["fetch_content"]) is not None:
-        html.find("<h1>")
         title = html[html.find("<h1>") + len("<h1>") : html.find("</h1>")]
         body = html[html.find("<p>") + len("<p>") : html.find("</p>")]
 
